@@ -1,8 +1,15 @@
-exports.getProducts = (req, res, next) => {
-  //Dummy data for now,
-  res.json([
-    { title: 'Amazing photo', price: '18.99' },
-    { title: 'Sky Scenes', price: '20.00' },
-    { title: 'Spooky spider photo', price: '27.99' },
-  ]);
+const Product = require('../models/product');
+
+exports.getProducts = async (req, res, next) => {
+  const products = await Product.findAll();
+
+  res.json(products);
+};
+
+exports.getProduct = async (req, res, next) => {
+  const { id } = req.params;
+
+  const product = await Product.findOne({ where: { id } });
+
+  res.json(product);
 };

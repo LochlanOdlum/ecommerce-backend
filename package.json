@@ -10,6 +10,14 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "express": "^4.17.1"
+    "bcryptjs": "^2.4.3",
+    "express": "^4.17.1",
+    "express-validator": "^6.13.0",
+    "jsonwebtoken": "^8.5.1",
+    "mysql2": "^2.3.3-rc.0",
+    "sequelize": "^6.9.0"
+  },
+  "devDependencies": {
+    "dotenv": "^10.0.0"
   }
 }
