@@ -21,3 +21,7 @@ exports.postSignup = () => {
     body('surname').trim().not().isEmpty().withMessage('Must include a surname'),
   ];
 };
+
+exports.login = () => {
+  return [body('email').normalizeEmail()];
+};

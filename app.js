@@ -22,6 +22,14 @@ app.use((req, res, next) => {
 app.use('/products', productRoute);
 app.use('/', authRoute);
 
+app.use((error, req, res, next) => {
+  console.log(error);
+  const status = error.statusCode || 500;
+  const message = error.message;
+  const data = error.data;
+  res.status(status).json({ message: message, data: data });
+});
+
 const main = async () => {
   // const result = await sequelize.sync({ alter: true });
   // console.log('t');
