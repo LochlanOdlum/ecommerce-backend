@@ -49,7 +49,7 @@ const main = async () => {
   //   price: 34.99,
   //   imageKey: 'awdwar3r3asd',
   // });
-  app.listen(5000);
+  app.listen(process.env.PORT || 5000);
 };
 
 main();
