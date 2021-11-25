@@ -2,7 +2,7 @@ const { DataTypes } = require('sequelize');
 
 const sequelize = require('../util/database');
 
-const Product = sequelize.define('product', {
+const orderItem = sequelize.define('orderItem', {
   id: {
     type: DataTypes.INTEGER,
     autoIncrement: true,
@@ -25,16 +25,6 @@ const Product = sequelize.define('product', {
     type: DataTypes.STRING,
     allowNull: false,
   },
-  isReserved: {
-    type: DataTypes.BOOLEAN,
-    allowNull: false,
-    defaultValue: false,
-  },
-  isPurchased: {
-    type: DataTypes.BOOLEAN,
-    allowNull: false,
-    defaultValue: false,
-  },
 });
 
-module.exports = Product;
+module.exports = orderItem;
