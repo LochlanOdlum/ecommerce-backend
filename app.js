@@ -17,8 +17,7 @@ app.use((req, res, next) => {
   if (req.originalUrl === '/stripewhook') {
     next();
   } else {
-    app.use(express.json());
-    next();
+    express.json()(req, res, next);
   }
 });
 
