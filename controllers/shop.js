@@ -3,6 +3,7 @@ const stripe = require('../util/stripe');
 
 const Product = require('../models/product');
 const User = require('../models/user');
+const Order = require('../models/order');
 
 //Need to limit products to not return any with isReserved: true
 exports.getProducts = async (req, res, next) => {
@@ -75,13 +76,19 @@ exports.startOrder = async (req, res, next) => {
     try {
       const upToDatePaymentIntent = await stripe.paymentIntents.retrieve(paymentIntent.id);
 
-      if (upToDatePaymentIntent.status === 'succeeded' || upToDatePaymentIntent.status === 'canceled') {
+      const upToDateOrder = await Order.findOne({ where: { id: order.id } });
+
+      if (
+        upToDatePaymentIntent.status === 'succeeded' ||
+        upToDatePaymentIntent.status === 'canceled' ||
+        upToDateOrder.isPaymentCompleted === true
+      ) {
         return;
       }
 
-      stripe.paymentIntents.cancel(paymentIntent.id);
+      stripe.paymentIntents.cancel(upToDatePaymentIntent.id);
 
-      order.destroy();
+      upToDateOrder.destroy();
 
       products.forEach((product) => {
         if (!product.isPurchased) {

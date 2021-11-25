@@ -2,6 +2,7 @@
 const express = require('express');
 
 const sequelize = require('./util/database');
+const stripe = require('./util/stripe');
 const shopRoute = require('./routes/shop');
 const authRoute = require('./routes/auth');
 
@@ -12,13 +13,50 @@ const OrderItem = require('./models/order-item');
 
 const app = express();
 
-app.use(express.json());
+app.use((req, res, next) => {
+  if (req.originalUrl === '/stripewhook') {
+    next();
+  } else {
+    app.use(express.json());
+    next();
+  }
+});
 
 app.use((req, res, next) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE ');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
   next();
+});
+
+app.post('/stripewhook', express.raw({ type: 'application/json' }), async (req, res) => {
+  const sig = req.headers['stripe-signature'];
+
+  let event;
+
+  try {
+    event = stripe.webhooks.constructEvent(req.body, sig, process.env.STRIPE_WHSEC);
+  } catch (err) {
+    console.log(`Webhook error: ${err.message}`);
+    return res.status(400).send(`Webhook error: ${err.message}`);
+  }
+
+  console.log('event created successfully');
+
+  if (event.type === 'payment_intent.succeeded') {
+    const paymentIntent = event.data.object;
+
+    const order = await Order.findOne({ where: { paymentIntentId: paymentIntent.id } });
+
+    if (!order) {
+      return res.json({ received: true });
+    }
+
+    order.isPaymentCompleted = true;
+    await order.save();
+  }
+
+  res.json({ received: true });
 });
 
 app.use('/shop', shopRoute);
