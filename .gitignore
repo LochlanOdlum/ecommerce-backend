@@ -4,10 +4,10 @@
 
 
 # testing
-
+.env
 
 # production
-.env
+
 
 
 # misc
