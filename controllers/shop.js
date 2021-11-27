@@ -64,6 +64,7 @@ exports.startOrder = async (req, res, next) => {
         description: product.description,
         price: product.price,
         imageKey: product.imageKey,
+        productId: product.id,
       })
     );
   });
@@ -76,6 +77,7 @@ exports.startOrder = async (req, res, next) => {
     try {
       const upToDatePaymentIntent = await stripe.paymentIntents.retrieve(paymentIntent.id);
 
+      //Alternatively could just call order.reload() to reload existing order model instance
       const upToDateOrder = await Order.findOne({ where: { id: order.id } });
 
       if (

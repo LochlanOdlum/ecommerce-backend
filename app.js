@@ -45,11 +45,24 @@ app.post('/stripewhook', express.raw({ type: 'application/json' }), async (req, 
   if (event.type === 'payment_intent.succeeded') {
     const paymentIntent = event.data.object;
 
-    const order = await Order.findOne({ where: { paymentIntentId: paymentIntent.id } });
+    //Eager load order Items in request below. Then loop through all order items and update products to have 'isPurchased = true'
+    const order = await Order.findOne({ where: { paymentIntentId: paymentIntent.id }, include: OrderItem });
 
     if (!order) {
       return res.json({ received: true });
     }
+
+    const orderProductIds = order.orderItems.map((item) => item.productId);
+
+    console.log(order);
+    console.log(order.orderItems);
+    console.log(orderProductIds);
+
+    orderProductIds.forEach(async (id) => {
+      const product = await Product.findOne({ where: { id } });
+      product.isPurchased = true;
+      await product.save();
+    });
 
     order.isPaymentCompleted = true;
     await order.save();
@@ -73,9 +86,10 @@ User.hasMany(Order);
 Order.belongsTo(User);
 Order.hasMany(OrderItem, { onDelete: 'cascade' });
 OrderItem.belongsTo(Order);
+OrderItem.belongsTo(Product);
 
 const main = async () => {
-  const order = await Order.findOne({ where: { id: 7 } });
+  // const order = await Order.findOne({ where: { id: 7 } });
   // const result = await sequelize.sync({ alter: true });
   // console.log('t');
   // const result = await sequelize.sync({ force: true });
