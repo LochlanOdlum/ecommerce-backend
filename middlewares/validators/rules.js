@@ -1,4 +1,4 @@
-const { body } = require('express-validator');
+const { body, param } = require('express-validator');
 
 const User = require('../../models/user');
 
@@ -24,6 +24,21 @@ exports.postSignup = () => {
 
 exports.login = () => {
   return [body('email').normalizeEmail()];
+};
+
+exports.getMyOrder = () => {
+  return [
+    param('id')
+      .not()
+      .isEmpty()
+      .withMessage('Must include an order id as url param')
+      .custom((value) => {
+        if (!Number.isInteger(Number(value))) {
+          throw new Error('Order id must be an integer');
+        }
+        return true;
+      }),
+  ];
 };
 
 exports.getMyOrders = () => {
