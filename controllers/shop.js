@@ -177,3 +177,17 @@ exports.getMyOrders = async (req, res, next) => {
 
   res.status(200).json(ordersReturn);
 };
+
+exports.orderSuccess = async (req, res, next) => {
+  const { paymentIntentId } = req.params;
+
+  const order = await Order.findOne({ where: { paymentIntentId } });
+
+  // if (order.userId !== req.userId) {
+  //   const error = new Error(`Unauthorised. This order isn't yours.`);
+  //   error.statusCode = 403;
+  //   return next(error);
+  // }
+
+  res.redirect(`/shop/myOrder/${order.id}`);
+};

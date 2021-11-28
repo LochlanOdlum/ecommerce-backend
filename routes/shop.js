@@ -18,4 +18,6 @@ router.get('/myOrder/:id', isAuth, validationRules.getMyOrder(), validators.vali
 
 router.get('/myOrders', isAuth, validationRules.getMyOrders(), validators.validate, productController.getMyOrders);
 
+router.get('/order/success/:paymentIntentId', isAuth, productController.orderSuccess);
+
 module.exports = router;
