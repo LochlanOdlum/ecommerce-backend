@@ -1,4 +1,5 @@
 const jwt = require('jsonwebtoken');
+const User = require('../models/user');
 
 module.exports = (req, res, next) => {
   const authError = () => {
@@ -24,7 +25,7 @@ module.exports = (req, res, next) => {
     return authError();
   }
 
-  //Could get sequelize user model instance and assign to req.user or something, but may not always need user model instance
+  //Dont fetch user model instance here as it's not always needed in every controller which requires authentication
   req.userId = decodedToken.userId;
   next();
 };

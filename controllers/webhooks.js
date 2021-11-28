@@ -1,4 +1,7 @@
 const stripe = require('../util/stripe');
+const Order = require('../models/order');
+const Product = require('../models/product');
+const OrderItem = require('../models/order-item');
 
 exports.stripewhook = async (req, res) => {
   const sig = req.headers['stripe-signature'];

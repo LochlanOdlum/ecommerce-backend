@@ -4,6 +4,7 @@ const stripe = require('../util/stripe');
 const Product = require('../models/product');
 const User = require('../models/user');
 const Order = require('../models/order');
+const OrderItem = require('../models/order-item');
 
 //Need to limit products to not return any with isReserved: true
 exports.getProducts = async (req, res, next) => {
@@ -49,12 +50,13 @@ exports.startOrder = async (req, res, next) => {
 
   //Create order with payment intent id, isPaymentCompleted: false...
 
-  const user = await User.findOne({ where: { id: req.userId } });
+  const user = req.user;
 
   const order = await user.createOrder({ paymentIntentId: paymentIntent.id, isPaymentCompleted: false });
 
   const promises = [];
 
+  //Reserve products so other users cannot buy a product which someone else is buying
   products.forEach((product) => {
     product.isReserved = true;
     promises.push(product.save());
@@ -71,7 +73,7 @@ exports.startOrder = async (req, res, next) => {
 
   await Promise.all(promises);
 
-  //This will unreserve products if order hasn't been paid in 30 mins and also cancels order.
+  //This will unreserve products if order hasn't been paid in 30 mins and also cancels order and payment Intent so they cannot be charged after.
 
   setTimeout(async () => {
     try {
@@ -104,4 +106,74 @@ exports.startOrder = async (req, res, next) => {
   }, 1000 * 60 * 30);
 
   res.status(200).json({ clientSecret: paymentIntent.client_secret });
+};
+
+exports.getMyOrder = async (req, res, next) => {
+  const { id: orderId } = req.params;
+  const userId = req.userId;
+
+  //Finding order directly rather than using user.getOrder(...), so custom error message for when order exists but not belonging to authenticated user.
+  const order = await Order.findOne({ where: { id: orderId }, include: [User, OrderItem] });
+
+  if (!order) {
+    const error = new Error('Could not find an order with this id');
+    error.statusCode = 404;
+    return next(error);
+  }
+
+  if (order.userId !== userId) {
+    const error = new Error(`Unauthorised. This order isn't yours.`);
+    error.statusCode = 403;
+    return next(error);
+  }
+
+  res.status(200).json({
+    id: orderId,
+    isPaymentCompleted: order.isPaymentCompleted,
+    createdAt: order.createdAt,
+    orderItems: order.orderItems,
+  });
+};
+
+exports.getMyOrders = async (req, res, next) => {
+  const { orderIds } = req.body;
+  const userId = req.userId;
+
+  const orders = await Order.findAll({
+    where: {
+      id: {
+        [Op.or]: orderIds,
+      },
+    },
+    include: OrderItem,
+  });
+
+  let isAllOrdersBelongToUser = true;
+
+  orders.forEach((order) => {
+    if (order.userId !== userId) {
+      isAllOrdersBelongToUser = false;
+    }
+  });
+
+  if (!isAllOrdersBelongToUser) {
+    const error = new Error('Unauthorised. Not all of the orders are yours');
+    error.statusCode = 403;
+    return next(error);
+  }
+
+  if (orders.length !== orderIds.length) {
+    const error = new Error('Could not find a unique order for each order id provided');
+    error.statusCode = 404;
+    return next(error);
+  }
+
+  const ordersReturn = orders.map((order) => ({
+    id: order.id,
+    isPaymentCompleted: order.isPaymentCompleted,
+    createdAt: order.createdAt,
+    orderItems: order.orderItems,
+  }));
+
+  res.status(200).json(ordersReturn);
 };
