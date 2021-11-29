@@ -128,10 +128,12 @@ exports.getMyOrder = async (req, res, next) => {
   }
 
   res.status(200).json({
-    id: orderId,
-    isPaymentCompleted: order.isPaymentCompleted,
-    createdAt: order.createdAt,
-    orderItems: order.orderItems,
+    order: {
+      id: orderId,
+      isPaymentCompleted: order.isPaymentCompleted,
+      createdAt: order.createdAt,
+      orderItems: order.orderItems,
+    },
   });
 };
 
@@ -175,7 +177,7 @@ exports.getMyOrders = async (req, res, next) => {
     orderItems: order.orderItems,
   }));
 
-  res.status(200).json(ordersReturn);
+  res.status(200).json({ orders: ordersReturn });
 };
 
 exports.orderSuccess = async (req, res, next) => {
