@@ -19,6 +19,12 @@ exports.getProduct = async (req, res, next) => {
 
   const product = await Product.findOne({ where: { id, isAvaliableForPurchase: true } });
 
+  if (!product) {
+    const error = new Error('Could not find a product with this id');
+    error.statusCode = 404;
+    return next(error);
+  }
+
   res.json(product);
 };
 
@@ -113,9 +119,9 @@ exports.getMyOrder = async (req, res, next) => {
   const userId = req.userId;
 
   //Finding order directly rather than using user.getOrder(...), so custom error message for when order exists but not belonging to authenticated user.
-  const order = await Order.findOne({ where: { id: orderId }, include: [User, OrderItem] });
+  const order = await Order.findOne({ where: { id: orderId, isPaymentCompleted: true }, include: [User, OrderItem] });
 
-  if (!order || !order.isPaymentCompleted) {
+  if (!order) {
     const error = new Error('Could not find an order with this id');
     error.statusCode = 404;
     return next(error);

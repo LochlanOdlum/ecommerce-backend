@@ -10,7 +10,7 @@ exports.signup = async (req, res, next) => {
 
   const passwordHash = await bcrypt.hash(password, 12);
 
-  await User.create({ email, passwordHash, firstName, surname });
+  await User.create({ email, passwordHash, firstName, surname, isAdmin: false });
 
   res.status(201).json({ message: 'User created' });
 };
@@ -18,7 +18,6 @@ exports.signup = async (req, res, next) => {
 exports.login = async (req, res, next) => {
   try {
     const { email, password } = req.body;
-    console.log('tr');
     const existingUser = await User.findOne({ where: { email } });
 
     const throwValidationError = () => {
@@ -37,7 +36,6 @@ exports.login = async (req, res, next) => {
 
     const token = jwt.sign(
       {
-        email: existingUser.email,
         userId: existingUser.id,
       },
       process.env.JWT_SECRET,
@@ -46,6 +44,7 @@ exports.login = async (req, res, next) => {
 
     res.status(200).json({
       token,
+      isAdmin: existingUser.isAdmin,
     });
   } catch (error) {
     if (!error.statusCode) {
