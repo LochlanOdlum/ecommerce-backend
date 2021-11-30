@@ -41,24 +41,24 @@ exports.getMyOrder = () => {
   ];
 };
 
-exports.getMyOrders = () => {
-  return [
-    body('orderIds')
-      // .not()
-      // .isEmpty()
-      // .withMessage('Must have orderIds propery with an array of order ids')
-      .custom((value) => {
-        if (!Array.isArray(value)) {
-          throw new Error('Order ids must be an array of integers');
-        }
+// exports.getMyOrders = () => {
+//   return [
+//     body('orderIds')
+//       // .not()
+//       // .isEmpty()
+//       // .withMessage('Must have orderIds propery with an array of order ids')
+//       .custom((value) => {
+//         if (!Array.isArray(value)) {
+//           throw new Error('Order ids must be an array of integers');
+//         }
 
-        value.forEach((id) => {
-          if (!Number.isInteger(id)) {
-            throw new Error('Each order id must be an integer!');
-          }
-        });
+//         value.forEach((id) => {
+//           if (!Number.isInteger(id)) {
+//             throw new Error('Each order id must be an integer!');
+//           }
+//         });
 
-        return true;
-      }),
-  ];
-};
+//         return true;
+//       }),
+//   ];
+// };

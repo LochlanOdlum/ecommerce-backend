@@ -139,36 +139,9 @@ exports.getMyOrder = async (req, res, next) => {
 
 exports.getMyOrders = async (req, res, next) => {
   const { orderIds } = req.body;
-  const userId = req.userId;
+  const user = req.user;
 
-  const orders = await Order.findAll({
-    where: {
-      id: {
-        [Op.or]: orderIds,
-      },
-    },
-    include: OrderItem,
-  });
-
-  let isAllOrdersBelongToUser = true;
-
-  orders.forEach((order) => {
-    if (order.userId !== userId) {
-      isAllOrdersBelongToUser = false;
-    }
-  });
-
-  if (!isAllOrdersBelongToUser) {
-    const error = new Error('Unauthorised. Not all of the orders are yours');
-    error.statusCode = 403;
-    return next(error);
-  }
-
-  if (orders.length !== orderIds.length) {
-    const error = new Error('Could not find a unique order for each order id provided');
-    error.statusCode = 404;
-    return next(error);
-  }
+  const orders = await user.getOrders({ include: OrderItem });
 
   const ordersReturn = orders.map((order) => ({
     id: order.id,

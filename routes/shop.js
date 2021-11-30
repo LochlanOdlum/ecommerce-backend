@@ -16,7 +16,7 @@ router.post('/startOrder', isAuth, fetchUser, productController.startOrder);
 
 router.get('/myOrder/:id', isAuth, validationRules.getMyOrder(), validators.validate, productController.getMyOrder);
 
-router.get('/myOrders', isAuth, validationRules.getMyOrders(), validators.validate, productController.getMyOrders);
+router.get('/myOrders', isAuth, fetchUser, productController.getMyOrders);
 
 router.get('/order/success/:paymentIntentId', isAuth, productController.orderSuccess);
 
