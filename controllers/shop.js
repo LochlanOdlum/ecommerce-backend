@@ -6,18 +6,18 @@ const User = require('../models/user');
 const Order = require('../models/order');
 const OrderItem = require('../models/order-item');
 
-//Need to limit products to not return any with isReserved: true
+//Need to limit products to not return any not avaliable for purchase
 exports.getProducts = async (req, res, next) => {
-  const products = await Product.findAll({ where: { isReserved: false } });
+  const products = await Product.findAll({ where: { isAvaliableForPurchase: true } });
 
   res.json(products);
 };
 
-//Need to limit products to not return any with isReserved: true
+//Need to limit products to only return those avaliable for purchase
 exports.getProduct = async (req, res, next) => {
   const { id } = req.params;
 
-  const product = await Product.findOne({ where: { id, isReserved: false } });
+  const product = await Product.findOne({ where: { id, isAvaliableForPurchase: true } });
 
   res.json(product);
 };
@@ -27,7 +27,7 @@ exports.getProduct = async (req, res, next) => {
 exports.startOrder = async (req, res, next) => {
   const { stripeReceiptEmail, itemIds } = req.body;
 
-  const products = await Product.findAll({ where: { id: { [Op.or]: itemIds }, isReserved: false } });
+  const products = await Product.findAll({ where: { id: { [Op.or]: itemIds }, isAvaliableForPurchase: true } });
 
   if (products.length !== itemIds.length) {
     console.log(products);
@@ -96,7 +96,7 @@ exports.startOrder = async (req, res, next) => {
 
       products.forEach((product) => {
         if (!product.isPurchased) {
-          product.isReserved = false;
+          product.isAvaliableForPurchase = true;
           product.save();
         }
       });
@@ -115,7 +115,7 @@ exports.getMyOrder = async (req, res, next) => {
   //Finding order directly rather than using user.getOrder(...), so custom error message for when order exists but not belonging to authenticated user.
   const order = await Order.findOne({ where: { id: orderId }, include: [User, OrderItem] });
 
-  if (!order) {
+  if (!order || !order.isPaymentCompleted) {
     const error = new Error('Could not find an order with this id');
     error.statusCode = 404;
     return next(error);
@@ -141,7 +141,7 @@ exports.getMyOrders = async (req, res, next) => {
   const { orderIds } = req.body;
   const user = req.user;
 
-  const orders = await user.getOrders({ include: OrderItem });
+  const orders = await user.getOrders({ include: OrderItem, where: { isPaymentCompleted: true } });
 
   const ordersReturn = orders.map((order) => ({
     id: order.id,

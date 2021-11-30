@@ -51,7 +51,7 @@ OrderItem.belongsTo(Product);
 
 const main = async () => {
   // const order = await Order.findOne({ where: { id: 7 } });
-  // const result = await sequelize.sync({ alter: true });
+  const result = await sequelize.sync({ alter: true });
   // console.log('t');
   // const result = await sequelize.sync({ force: true });
   // console.log(user.toJSON());

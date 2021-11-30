@@ -25,10 +25,10 @@ const Product = sequelize.define('product', {
     type: DataTypes.STRING,
     allowNull: false,
   },
-  isReserved: {
+  isAvaliableForPurchase: {
     type: DataTypes.BOOLEAN,
     allowNull: false,
-    defaultValue: false,
+    defaultValue: true,
   },
   isPurchased: {
     type: DataTypes.BOOLEAN,
