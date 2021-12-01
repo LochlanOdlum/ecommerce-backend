@@ -13,6 +13,10 @@ const Order = sequelize.define('order', {
     type: DataTypes.STRING,
     allowNull: false,
   },
+  totalPrice: {
+    type: DataTypes.DECIMAL(10, 2),
+    allowNull: false,
+  },
   isPaymentCompleted: {
     type: DataTypes.BOOLEAN,
     allowNull: false,

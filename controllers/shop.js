@@ -58,7 +58,11 @@ exports.startOrder = async (req, res, next) => {
 
   const user = req.user;
 
-  const order = await user.createOrder({ paymentIntentId: paymentIntent.id, isPaymentCompleted: false });
+  const order = await user.createOrder({
+    paymentIntentId: paymentIntent.id,
+    isPaymentCompleted: false,
+    totalPrice: totalCostInPence / 100,
+  });
 
   const promises = [];
 
