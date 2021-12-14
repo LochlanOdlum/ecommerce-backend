@@ -21,7 +21,11 @@ const Product = sequelize.define('product', {
     type: DataTypes.DECIMAL(10, 2),
     allowNull: false,
   },
-  imageKey: {
+  rawImageKey: {
+    type: DataTypes.STRING,
+    allowNull: false,
+  },
+  watermarkedImageKey: {
     type: DataTypes.STRING,
     allowNull: false,
   },

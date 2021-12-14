@@ -21,7 +21,7 @@ const orderItem = sequelize.define('orderItem', {
     type: DataTypes.DECIMAL(10, 2),
     allowNull: false,
   },
-  imageKey: {
+  rawImageKey: {
     type: DataTypes.STRING,
     allowNull: false,
   },

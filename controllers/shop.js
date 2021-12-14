@@ -75,7 +75,7 @@ exports.startOrder = async (req, res, next) => {
         title: product.title,
         description: product.description,
         price: product.price,
-        imageKey: product.imageKey,
+        rawImageKey: product.rawImageKey,
         productId: product.id,
       })
     );
