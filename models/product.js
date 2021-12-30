@@ -29,6 +29,10 @@ const Product = sequelize.define('product', {
     type: DataTypes.STRING,
     allowNull: false,
   },
+  watermarkedImagePublicURL: {
+    type: DataTypes.STRING,
+    allowNull: false,
+  },
   isAvaliableForPurchase: {
     type: DataTypes.BOOLEAN,
     allowNull: false,

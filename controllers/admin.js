@@ -1,5 +1,6 @@
 const fs = require('fs/promises');
 
+const Product = require('../models/product');
 const s3 = require('../util/s3');
 
 exports.postPhoto = async (req, res, next) => {
@@ -14,9 +15,11 @@ exports.postPhoto = async (req, res, next) => {
   //  path: 'images/2021-12-27T03:22:31.903Z-65d366_62228a3551614e18a4444ec83c0c0f2c~mv2.jpg',
   //  size: 197854
   // }
-  console.log(req.file);
-  const response = await s3.uploadRaw(req.file);
-  const response2 = await s3.watermarkAndUpload(req.file);
+
+  const { title, description, price } = req.body;
+
+  const rawResponse = await s3.uploadRaw(req.file);
+  const watermarkedResponse = await s3.watermarkAndUpload(req.file);
   //S3 response object example:
   // {
   // ETag: '"2477a43eada026c5d14c40a1e5402cdd"',
@@ -26,8 +29,15 @@ exports.postPhoto = async (req, res, next) => {
   // Bucket: 'skylight-photography-raw-photos'
   // }
 
-  console.log(response);
-  console.log(response2);
+  console.log('Creating photo product in sql database');
+  await Product.create({
+    title,
+    description,
+    price,
+    rawImageKey: rawResponse.Key,
+    watermarkedImageKey: watermarkedResponse.Key,
+    watermarkedImagePublicURL: watermarkedResponse.Location,
+  });
 
   res.status(200).json({ message: 'Photo created' });
 };

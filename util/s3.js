@@ -24,10 +24,10 @@ exports.uploadRaw = (file) => {
 
 //File must be a multer file object
 exports.watermarkAndUpload = async (file) => {
-  watermark(file.path, file.filename);
+  await watermark(file.path, file.filename);
 
   const fileStream = fs.createReadStream(
-    `./temp-watermarked-images/${file.filename}`
+    `util/temp-watermarked-images/${file.filename}`
   );
 
   const uploadParams = {

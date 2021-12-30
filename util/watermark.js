@@ -1,43 +1,48 @@
-const Jimp = require('jimp');
+const fs = require('fs');
+const { promisify } = require('util');
+
+const sharp = require('sharp');
+const sizeOf = promisify(require('image-size'));
 const getAverageColor = require('fast-average-color-node').getAverageColor;
 
-//Watermarks image, outputting to './temp-watermarked-images/(filename)'
-const watermark = async (RAW_IMAGE_PATH, RAW_IMAGE_FILENAME) => {
-  // First figure out if image is dark or light to know what watermark color
-  const { isDark } = await getAverageColor(RAW_IMAGE_PATH);
+const watermark = async (rawImagePath, rawImageFilename) => {
+  const { width: rawPhotoWidth } = await sizeOf(rawImagePath);
 
-  // Add watermark
-  const [image, watermark] = await Promise.all([
-    Jimp.read(RAW_IMAGE_PATH),
-    Jimp.read('./watermark.png'),
-  ]);
+  const { isDark } = await getAverageColor(rawImagePath);
 
-  // Watermark is 2/5th the width of the photo
-  watermark.resize(image.bitmap.width / 2.5, Jimp.AUTO);
+  const brightnessMultiplier = isDark ? 1.4 : 4;
+  const watermarkBuffer = await sharp('util/watermark.png')
+    .resize(Math.round(rawPhotoWidth / 3))
+    .composite([
+      {
+        //Final number in array below is opacity: 0 is fully transparent and 255 is no change
+        input: Buffer.from([255, 255, 255, 100]),
+        raw: {
+          width: 1,
+          height: 1,
+          channels: 4,
+        },
+        tile: true,
+        blend: 'dest-in',
+      },
+    ])
+    .modulate({
+      brightness: brightnessMultiplier,
+    })
+    .toBuffer();
 
-  watermark.opacity(0.4);
+  //TODO: Figure out how to do this with pipelines so don't need to write watermarked image
+  // to local storage, send directly to s3 bucket
+  await sharp(rawImagePath)
+    .composite([{ input: watermarkBuffer }])
+    .toFile(`util/temp-watermarked-images/${rawImageFilename}`);
 
-  if (isDark) {
-    // Slightly ligthten as watermark wasn't standing out enough on dark photos
-    watermark.brightness(0.05);
-  } else {
-    // Lighten image as watermark stood out too much
-    watermark.brightness(0.35);
-  }
+  // const pipeline = sharp();
+  // const finishedPipeline = pipeline.composite([{ input: watermarkBuffer }]);
 
-  // X,Y co-ordinates chosen to print watermark centered on photo
-  const X = 0.5 * (image.bitmap.width - watermark.bitmap.width);
-  const Y = 0.5 * (image.bitmap.height - watermark.bitmap.height);
-
-  const watermarkedImage = await image.composite(watermark, X, Y, [
-    {
-      mode: Jimp.BLEND_SCREEN,
-      opacitySource: 1,
-      opacityDest: 1,
-    },
-  ]);
-
-  watermarkedImage.write(`./temp-watermarked-images/${RAW_IMAGE_FILENAME}`);
+  // const readStream = fs.createReadStream(rawImagePath);
+  // finishedPipeline.pipe(readStream);
+  // return finishedPipeline;
 };
 
 module.exports = watermark;
