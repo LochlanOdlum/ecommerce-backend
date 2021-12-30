@@ -1,6 +1,8 @@
+const fs = require('fs');
+
 const S3 = require('aws-sdk/clients/s3');
-const Jimp = require('jimp');
-const jimp = require('jimp');
+
+const watermark = require('./watermark');
 
 const s3 = new S3({
   region: process.env.AWS_BUCKET_REGION,
@@ -21,14 +23,15 @@ exports.uploadRaw = (file) => {
 };
 
 //File must be a multer file object
-exports.watermarkAndUpload = (file) => {
-  const fileStream = fs.createReadStream(file.path);
+exports.watermarkAndUpload = async (file) => {
+  watermark(file.path, file.filename);
 
-  //Somehow watermark and set body below to this watermarked image?
-  const image = await Jimp.read(file.buffer);
+  const fileStream = fs.createReadStream(
+    `./temp-watermarked-images/${file.filename}`
+  );
 
   const uploadParams = {
-    Bucket: process.env.AWS_BUCKET_RAW_PHOTOS_NAME,
+    Bucket: process.env.AWS_BUCKET_WATERMARKED_PHOTOS_NAME,
     Body: fileStream,
     Key: file.filename,
   };
