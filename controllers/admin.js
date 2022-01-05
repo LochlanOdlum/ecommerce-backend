@@ -18,8 +18,21 @@ exports.postPhoto = async (req, res, next) => {
 
   const { title, description, price } = req.body;
 
-  const rawResponse = await s3.uploadRaw(req.file);
-  const watermarkedResponse = await s3.watermarkAndUpload(req.file);
+  const uploadPromises = [];
+
+  uploadPromises.push(s3.uploadRaw(req.file));
+  uploadPromises.push(s3.watermarkAndUpload(req.file));
+
+  const [rawResponse, watermarkResponses] = await Promise.all(uploadPromises);
+
+  const [
+    fullWatermarkResponse,
+    mediumWatermarkResponse,
+    mediumCroppedWatermarkResponse,
+  ] = watermarkResponses;
+
+  // const rawResponse = await s3.uploadRaw(req.file);
+  // const watermarkedResponse = await s3.watermarkAndUpload(req.file);
   //S3 response object example:
   // {
   // ETag: '"2477a43eada026c5d14c40a1e5402cdd"',
@@ -35,8 +48,13 @@ exports.postPhoto = async (req, res, next) => {
     description,
     price,
     rawImageKey: rawResponse.Key,
-    watermarkedImageKey: watermarkedResponse.Key,
-    watermarkedImagePublicURL: watermarkedResponse.Location,
+    fullWatermarkedImageKey: fullWatermarkResponse.Key,
+    fullWatermarkedImagePublicURL: fullWatermarkResponse.Location,
+    mediumWatermarkedImageKey: mediumWatermarkResponse.Key,
+    mediumWatermarkedImagePublicURL: mediumWatermarkResponse.Location,
+    mediumCroppedSquareWatermarkedImageKey: mediumCroppedWatermarkResponse.Key,
+    mediumCroppedSquareWatermarkedImagePublicURL:
+      mediumCroppedWatermarkResponse.Location,
   });
 
   res.status(200).json({ message: 'Photo created' });

@@ -5,8 +5,31 @@ const sharp = require('sharp');
 const sizeOf = promisify(require('image-size'));
 const getAverageColor = require('fast-average-color-node').getAverageColor;
 
+//First scales down image to specified height then crops the image to width from center
+const shrinkandcrop = (
+  image,
+  imageWidth,
+  imageHeight,
+  shrinkHeight,
+  cropWidth
+) => {
+  const resizedWidth = (shrinkHeight / imageHeight) * imageWidth;
+
+  return sharp(image)
+    .resize(null, shrinkHeight)
+    .extract({
+      width: cropWidth,
+      left: Math.round(0.5 * (resizedWidth - cropWidth)),
+      top: 0,
+      height: shrinkHeight - 1,
+    })
+    .toBuffer();
+};
+
 const watermark = async (rawImagePath, rawImageFilename) => {
-  const { width: rawPhotoWidth } = await sizeOf(rawImagePath);
+  const { width: rawPhotoWidth, height: rawPhotoHeight } = await sizeOf(
+    rawImagePath
+  );
 
   const { isDark } = await getAverageColor(rawImagePath);
 
@@ -33,16 +56,41 @@ const watermark = async (rawImagePath, rawImageFilename) => {
 
   //TODO: Figure out how to do this with pipelines so don't need to write watermarked image
   // to local storage, send directly to s3 bucket
-  await sharp(rawImagePath)
+
+  // await sharp(rawImagePath)
+  //   .composite([{ input: watermarkBuffer }])
+  //   .toFile(`util/temp-watermarked-images/${rawImageFilename}`);
+
+  const promises = [];
+
+  const fullWatermarkedImageBuffer = await sharp(rawImagePath)
     .composite([{ input: watermarkBuffer }])
-    .toFile(`util/temp-watermarked-images/${rawImageFilename}`);
+    .toBuffer();
 
-  // const pipeline = sharp();
-  // const finishedPipeline = pipeline.composite([{ input: watermarkBuffer }]);
+  //Medium size image
+  //i.e. downscaled image so height is 500px high
+  promises.push(sharp(fullWatermarkedImageBuffer).resize(null, 500).toBuffer());
 
-  // const readStream = fs.createReadStream(rawImagePath);
-  // finishedPipeline.pipe(readStream);
-  // return finishedPipeline;
+  //Medium sized image then cropped horizontally to square
+  //For use on shop page with list of all photos for sale
+  promises.push(
+    shrinkandcrop(
+      fullWatermarkedImageBuffer,
+      rawPhotoWidth,
+      rawPhotoHeight,
+      500,
+      500
+    )
+  );
+
+  const [mediumWatermarkedBuffer, mediumCroppedSquareWatermarkedBuffer] =
+    await Promise.all(promises);
+
+  return [
+    fullWatermarkedImageBuffer,
+    mediumWatermarkedBuffer,
+    mediumCroppedSquareWatermarkedBuffer,
+  ];
 };
 
 module.exports = watermark;

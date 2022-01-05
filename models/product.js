@@ -25,11 +25,27 @@ const Product = sequelize.define('product', {
     type: DataTypes.STRING,
     allowNull: false,
   },
-  watermarkedImageKey: {
+  fullWatermarkedImageKey: {
     type: DataTypes.STRING,
     allowNull: false,
   },
-  watermarkedImagePublicURL: {
+  fullWatermarkedImagePublicURL: {
+    type: DataTypes.STRING,
+    allowNull: false,
+  },
+  mediumWatermarkedImageKey: {
+    type: DataTypes.STRING,
+    allowNull: false,
+  },
+  mediumWatermarkedImagePublicURL: {
+    type: DataTypes.STRING,
+    allowNull: false,
+  },
+  mediumCroppedSquareWatermarkedImageKey: {
+    type: DataTypes.STRING,
+    allowNull: false,
+  },
+  mediumCroppedSquareWatermarkedImagePublicURL: {
     type: DataTypes.STRING,
     allowNull: false,
   },

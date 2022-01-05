@@ -1,4 +1,5 @@
 const fs = require('fs');
+const { Readable } = require('stream');
 
 const S3 = require('aws-sdk/clients/s3');
 
@@ -24,19 +25,51 @@ exports.uploadRaw = (file) => {
 
 //File must be a multer file object
 exports.watermarkAndUpload = async (file) => {
-  await watermark(file.path, file.filename);
+  const [
+    fullWatermarkedImageBuffer,
+    mediumWatermarkedBuffer,
+    mediumCroppedSquareWatermarkedBuffer,
+  ] = await watermark(file.path, file.filename);
 
-  const fileStream = fs.createReadStream(
-    `util/temp-watermarked-images/${file.filename}`
-  );
+  console.log('Recieved image buffers');
 
-  const uploadParams = {
-    Bucket: process.env.AWS_BUCKET_WATERMARKED_PHOTOS_NAME,
-    Body: fileStream,
+  //TODO: Create s3 bucket for different versions of photo given above
+
+  const uploadPromises = [];
+
+  //Full quality upload
+  const uploadParamsFull = {
+    Bucket: process.env.AWS_BUCKET_FULL_WATERMARKED_PHOTOS_NAME,
+    Body: Readable.from(fullWatermarkedImageBuffer),
     Key: file.filename,
   };
 
-  return s3.upload(uploadParams).promise();
+  uploadPromises.push(s3.upload(uploadParamsFull).promise());
+
+  //Downscaled to medium quality upload
+  const uploadParamsMedium = {
+    Bucket: process.env.AWS_BUCKET_MEDIUM_WATERMARKED_PHOTOS_NAME,
+    Body: Readable.from(mediumWatermarkedBuffer),
+    Key: file.filename,
+  };
+
+  uploadPromises.push(s3.upload(uploadParamsMedium).promise());
+
+  //Downscaled to medium then cropped square upload
+  console.log('heyy');
+  console.log(
+    process.env.AWS_BUCKET_MEDIUM_CROPPED_SQUARE_WATERMARKED_PHOTOS_NAME
+  );
+  const uploadParamsMediumSquare = {
+    Bucket:
+      process.env.AWS_BUCKET_MEDIUM_CROPPED_SQUARE_WATERMARKED_PHOTOS_NAME,
+    Body: Readable.from(mediumCroppedSquareWatermarkedBuffer),
+    Key: file.filename,
+  };
+
+  uploadPromises.push(s3.upload(uploadParamsMediumSquare).promise());
+
+  return Promise.all(uploadPromises);
 };
 
 exports.getRawPhoto = (key) => {
@@ -51,7 +84,7 @@ exports.getRawPhoto = (key) => {
 exports.getWatermarkedPhoto = (key) => {
   const downloadParams = {
     Key: key,
-    Bucket: process.env.AWS_BUCKET_WATERMARKED_PHOTOS_NAME,
+    Bucket: process.env.AWS_BUCKET_FULL_WATERMARKED_PHOTOS_NAME,
   };
 
   return s3.getObject(downloadParams).createReadStream();
