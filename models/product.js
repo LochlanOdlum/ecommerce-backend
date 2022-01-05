@@ -18,7 +18,7 @@ const Product = sequelize.define('product', {
     allowNull: true,
   },
   price: {
-    type: DataTypes.DECIMAL(10, 2),
+    type: DataTypes.INTEGER,
     allowNull: false,
   },
   rawImageKey: {

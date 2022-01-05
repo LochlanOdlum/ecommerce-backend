@@ -50,9 +50,10 @@ exports.startOrder = async (req, res, next) => {
 
   //Get total cost of order from products using order items.
 
-  const totalCostInPence =
-    100 *
-    products.reduce((accumulator, current) => accumulator + +current.price, 0);
+  const totalCostInPence = products.reduce(
+    (accumulator, current) => accumulator + +current.price,
+    0
+  );
 
   //Create payment Intent
 
@@ -69,7 +70,7 @@ exports.startOrder = async (req, res, next) => {
   const order = await user.createOrder({
     paymentIntentId: paymentIntent.id,
     isPaymentCompleted: false,
-    totalPrice: totalCostInPence / 100,
+    totalPrice: totalCostInPence,
   });
 
   // const promises = [];

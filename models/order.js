@@ -14,7 +14,7 @@ const Order = sequelize.define('order', {
     allowNull: false,
   },
   totalPrice: {
-    type: DataTypes.DECIMAL(10, 2),
+    type: DataTypes.INTEGER,
     allowNull: false,
   },
   isPaymentCompleted: {
