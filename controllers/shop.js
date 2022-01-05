@@ -73,24 +73,24 @@ exports.startOrder = async (req, res, next) => {
     totalPrice: totalCostInPence,
   });
 
-  // const promises = [];
+  const promises = [];
 
   //Reserve products so other users cannot buy a product which someone else is buying
-  // products.forEach((product) => {
-  //   product.isReserved = true;
-  //   promises.push(product.save());
-  //   promises.push(
-  //     order.createOrderItem({
-  //       title: product.title,
-  //       description: product.description,
-  //       price: product.price,
-  //       rawImageKey: product.rawImageKey,
-  //       productId: product.id,
-  //     })
-  //   );
-  // });
+  products.forEach((product) => {
+    // product.isReserved = true;
+    // promises.push(product.save());
+    promises.push(
+      order.createOrderItem({
+        title: product.title,
+        description: product.description,
+        price: product.price,
+        rawImageKey: product.rawImageKey,
+        productId: product.id,
+      })
+    );
+  });
 
-  // await Promise.all(promises);
+  await Promise.all(promises);
 
   //If order hasn't been paid in 30 mins and also cancels order and payment Intent so they cannot be charged after.
 

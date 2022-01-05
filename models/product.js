@@ -54,11 +54,11 @@ const Product = sequelize.define('product', {
     allowNull: false,
     defaultValue: true,
   },
-  isPurchased: {
-    type: DataTypes.BOOLEAN,
-    allowNull: false,
-    defaultValue: false,
-  },
+  // isPurchased: {
+  //   type: DataTypes.BOOLEAN,
+  //   allowNull: false,
+  //   defaultValue: false,
+  // },
 });
 
 module.exports = Product;
