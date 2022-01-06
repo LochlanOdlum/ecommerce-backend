@@ -1,7 +1,8 @@
 const jwt = require('jsonwebtoken');
 const User = require('../models/user');
 
-module.exports = (req, res, next) => {
+const isAuth = (req, res, next) => {
+  console.log(req.method);
   const authError = () => {
     const error = new Error('Not authenticated');
     error.statusCode = 401;
@@ -29,3 +30,5 @@ module.exports = (req, res, next) => {
   req.userId = decodedToken.userId;
   next();
 };
+
+module.exports = isAuth;

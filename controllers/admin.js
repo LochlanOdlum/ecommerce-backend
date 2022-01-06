@@ -20,10 +20,15 @@ exports.postPhoto = async (req, res, next) => {
 
   const uploadPromises = [];
 
-  uploadPromises.push(s3.uploadRaw(req.file));
+  uploadPromises.push(s3.uploadRawAndDownscaledSquare(req.file));
   uploadPromises.push(s3.watermarkAndUpload(req.file));
 
-  const [rawResponse, watermarkResponses] = await Promise.all(uploadPromises);
+  const [rawResponses, watermarkResponses] = await Promise.all(uploadPromises);
+
+  const [mediumSquareResponse, rawResponse] = rawResponses;
+
+  console.log('raw responses:');
+  console.log(rawResponse, mediumSquareResponse);
 
   const [
     fullWatermarkResponse,
@@ -48,6 +53,7 @@ exports.postPhoto = async (req, res, next) => {
     description,
     price,
     rawImageKey: rawResponse.Key,
+    mediumSquareImageKey: mediumSquareResponse.Key,
     fullWatermarkedImageKey: fullWatermarkResponse.Key,
     fullWatermarkedImagePublicURL: fullWatermarkResponse.Location,
     mediumWatermarkedImageKey: mediumWatermarkResponse.Key,

@@ -3,7 +3,7 @@ const { Readable } = require('stream');
 
 const S3 = require('aws-sdk/clients/s3');
 
-const watermark = require('./watermark');
+const photoEditFormat = require('./photoEditFormat');
 
 const s3 = new S3({
   region: process.env.AWS_BUCKET_REGION,
@@ -11,16 +11,32 @@ const s3 = new S3({
   secretAccessKey: process.env.AWS_SECRET_KEY,
 });
 
-exports.uploadRaw = (file) => {
+exports.uploadRawAndDownscaledSquare = async (file) => {
+  const downscaledSquareImageBuffer = await photoEditFormat.shrinkRawAndSquare(
+    file.path
+  );
+
   const fileStream = fs.createReadStream(file.path);
 
-  const uploadParams = {
+  const uploadPromises = [];
+
+  const uploadParamsMediumSquare = {
+    Bucket: process.env.AWS_BUCKET_MEDIUM_SQUARE_PHOTOS,
+    Body: Readable.from(downscaledSquareImageBuffer),
+    Key: file.filename,
+  };
+
+  uploadPromises.push(s3.upload(uploadParamsMediumSquare).promise());
+
+  const uploadParamsRaw = {
     Bucket: process.env.AWS_BUCKET_RAW_PHOTOS_NAME,
     Body: fileStream,
     Key: file.filename,
   };
 
-  return s3.upload(uploadParams).promise();
+  uploadPromises.push(s3.upload(uploadParamsRaw).promise());
+
+  return Promise.all(uploadPromises);
 };
 
 //File must be a multer file object
@@ -29,7 +45,7 @@ exports.watermarkAndUpload = async (file) => {
     fullWatermarkedImageBuffer,
     mediumWatermarkedBuffer,
     mediumCroppedSquareWatermarkedBuffer,
-  ] = await watermark(file.path, file.filename);
+  ] = await photoEditFormat.watermark(file.path, file.filename);
 
   console.log('Recieved image buffers');
 

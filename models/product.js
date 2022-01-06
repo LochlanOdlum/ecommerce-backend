@@ -25,6 +25,10 @@ const Product = sequelize.define('product', {
     type: DataTypes.STRING,
     allowNull: false,
   },
+  mediumSquareImageKey: {
+    type: DataTypes.STRING,
+    allowNull: false,
+  },
   fullWatermarkedImageKey: {
     type: DataTypes.STRING,
     allowNull: false,

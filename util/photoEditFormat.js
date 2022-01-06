@@ -25,8 +25,7 @@ const shrinkandcrop = (
     })
     .toBuffer();
 };
-
-const watermark = async (rawImagePath, rawImageFilename) => {
+exports.watermark = async (rawImagePath, rawImageFilename) => {
   const { width: rawPhotoWidth, height: rawPhotoHeight } = await sizeOf(
     rawImagePath
   );
@@ -93,4 +92,10 @@ const watermark = async (rawImagePath, rawImageFilename) => {
   ];
 };
 
-module.exports = watermark;
+exports.shrinkRawAndSquare = async (rawImagePath) => {
+  const { width: rawPhotoWidth, height: rawPhotoHeight } = await sizeOf(
+    rawImagePath
+  );
+
+  return shrinkandcrop(rawImagePath, rawPhotoWidth, rawPhotoHeight, 500, 500);
+};
