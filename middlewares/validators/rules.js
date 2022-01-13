@@ -17,8 +17,7 @@ exports.postSignup = () => {
       }),
 
     body('password').trim().isLength({ min: 8, max: 64 }).withMessage('Password must be between 8 and 64 characters'),
-    body('firstName').trim().not().isEmpty().withMessage('Must include a first name'),
-    body('surname').trim().not().isEmpty().withMessage('Must include a surname'),
+    body('name').trim().not().isEmpty().withMessage('Must include a name'),
   ];
 };
 
