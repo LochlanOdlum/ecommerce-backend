@@ -27,10 +27,7 @@ app.use((req, res, next) => {
 
 app.use((req, res, next) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader(
-    'Access-Control-Allow-Methods',
-    'GET, POST, PUT, PATCH, DELETE '
-  );
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE ');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
   if (req.method === 'OPTIONS') {
     return res.sendStatus(200);
@@ -59,7 +56,7 @@ OrderItem.belongsTo(Product);
 
 const main = async () => {
   // const order = await Order.findOne({ where: { id: 7 } });
-  // const result = await sequelize.sync({ alter: true });
+  const result = await sequelize.sync({ alter: true });
   // console.log('t');
   // const result = await sequelize.sync({ force: true });
   // console.log(user.toJSON());
