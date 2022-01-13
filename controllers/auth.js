@@ -45,6 +45,7 @@ exports.login = async (req, res, next) => {
     res.status(200).json({
       token,
       isAdmin: existingUser.isAdmin,
+      name: existingUser.name,
     });
   } catch (error) {
     if (!error.statusCode) {
