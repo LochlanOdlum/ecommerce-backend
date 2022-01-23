@@ -5,6 +5,7 @@ const Product = require('../models/product');
 const User = require('../models/user');
 const Order = require('../models/order');
 const OrderItem = require('../models/order-item');
+const Collection = require('../models/collection');
 
 exports.getProducts = async (req, res, next) => {
   const products = await Product.findAll({
@@ -30,6 +31,12 @@ exports.getProduct = async (req, res, next) => {
   res.json(product);
 };
 
+exports.getCollections = async (req, res, next) => {
+  const collections = await Collection.findAll();
+
+  res.json(collections);
+};
+
 //Recieve order = {itemIds: [id1, id2, ...], stripeReceiptEmail?}
 //Starts an order, creates paymentIntent but still needs to be paid.
 exports.startOrder = async (req, res, next) => {
@@ -41,19 +48,14 @@ exports.startOrder = async (req, res, next) => {
 
   if (products.length !== itemIds.length) {
     console.log(products);
-    const error = new Error(
-      'Could not match each item Id to an existing unique product.'
-    );
+    const error = new Error('Could not match each item Id to an existing unique product.');
     error.statusCode = 400;
     return next(error);
   }
 
   //Get total cost of order from products using order items.
 
-  const totalCostInPence = products.reduce(
-    (accumulator, current) => accumulator + +current.price,
-    0
-  );
+  const totalCostInPence = products.reduce((accumulator, current) => accumulator + +current.price, 0);
 
   //Create payment Intent
 
@@ -96,9 +98,7 @@ exports.startOrder = async (req, res, next) => {
 
   setTimeout(async () => {
     try {
-      const upToDatePaymentIntent = await stripe.paymentIntents.retrieve(
-        paymentIntent.id
-      );
+      const upToDatePaymentIntent = await stripe.paymentIntents.retrieve(paymentIntent.id);
 
       //Alternatively could just call order.reload() to reload existing order model instance
       const upToDateOrder = await Order.findOne({ where: { id: order.id } });
@@ -126,9 +126,7 @@ exports.startOrder = async (req, res, next) => {
     }
   }, 1000 * 60 * 30);
 
-  res
-    .status(200)
-    .json({ clientSecret: paymentIntent.client_secret, orderId: order.id });
+  res.status(200).json({ clientSecret: paymentIntent.client_secret, orderId: order.id });
 };
 
 exports.getMyOrder = async (req, res, next) => {

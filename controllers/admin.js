@@ -16,7 +16,16 @@ exports.postPhoto = async (req, res, next) => {
   //  size: 197854
   // }
 
-  const { title, description, price } = req.body;
+  const { title, description, priceInPence } = req.body;
+
+  const priceToPounds = (pence) => {
+    const array = Array.from(String(pence));
+    array.splice(array.length - 2, 0, '.');
+
+    return array.join('');
+  };
+
+  const priceInPounds = priceToPounds(priceInPence);
 
   const uploadPromises = [];
 
@@ -27,14 +36,7 @@ exports.postPhoto = async (req, res, next) => {
 
   const [mediumSquareResponse, rawResponse] = rawResponses;
 
-  console.log('raw responses:');
-  console.log(rawResponse, mediumSquareResponse);
-
-  const [
-    fullWatermarkResponse,
-    mediumWatermarkResponse,
-    mediumCroppedWatermarkResponse,
-  ] = watermarkResponses;
+  const [fullWatermarkResponse, mediumWatermarkResponse, mediumCroppedWatermarkResponse] = watermarkResponses;
 
   // const rawResponse = await s3.uploadRaw(req.file);
   // const watermarkedResponse = await s3.watermarkAndUpload(req.file);
@@ -51,7 +53,8 @@ exports.postPhoto = async (req, res, next) => {
   await Product.create({
     title,
     description,
-    price,
+    priceInPence,
+    priceInPounds,
     rawImageKey: rawResponse.Key,
     mediumSquareImageKey: mediumSquareResponse.Key,
     fullWatermarkedImageKey: fullWatermarkResponse.Key,
@@ -59,8 +62,7 @@ exports.postPhoto = async (req, res, next) => {
     mediumWatermarkedImageKey: mediumWatermarkResponse.Key,
     mediumWatermarkedImagePublicURL: mediumWatermarkResponse.Location,
     mediumCroppedSquareWatermarkedImageKey: mediumCroppedWatermarkResponse.Key,
-    mediumCroppedSquareWatermarkedImagePublicURL:
-      mediumCroppedWatermarkResponse.Location,
+    mediumCroppedSquareWatermarkedImagePublicURL: mediumCroppedWatermarkResponse.Location,
   });
 
   res.status(200).json({ message: 'Photo created' });

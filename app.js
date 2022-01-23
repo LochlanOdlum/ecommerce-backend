@@ -6,12 +6,14 @@ const stripe = require('./util/stripe');
 const shopRoute = require('./routes/shop');
 const authRoute = require('./routes/auth');
 const adminRoute = require('./routes/admin');
+const pingRoute = require('./routes/ping');
 const webHooksRoute = require('./routes/webhooks');
 
 const Product = require('./models/product');
 const User = require('./models/user');
 const Order = require('./models/order');
 const OrderItem = require('./models/order-item');
+const Collection = require('./models/collection');
 
 const app = express();
 
@@ -36,8 +38,10 @@ app.use((req, res, next) => {
 });
 
 app.use('/shop', shopRoute);
-app.use('/webhooks', webHooksRoute);
 app.use('/admin', adminRoute);
+app.use('/webhooks', webHooksRoute);
+app.use('/ping', pingRoute);
+
 app.use(authRoute);
 
 app.use((error, req, res, next) => {
@@ -48,6 +52,8 @@ app.use((error, req, res, next) => {
   res.status(status).json({ message: message, data: data });
 });
 
+Collection.hasMany(Product);
+Product.belongsTo(Collection);
 User.hasMany(Order);
 Order.belongsTo(User);
 Order.hasMany(OrderItem, { onDelete: 'cascade' });
@@ -56,10 +62,14 @@ OrderItem.belongsTo(Product);
 
 const main = async () => {
   // const order = await Order.findOne({ where: { id: 7 } });
-  // const result = await sequelize.sync({ alter: true });
+  const result = await sequelize.sync({ alter: true });
   // console.log('t');
   // const result = await sequelize.sync({ force: true });
   // console.log(user.toJSON());
+  // Collection.create({ name: 'Milan' });
+  // Collection.create({ name: 'Sunsets' });
+  // Collection.create({ name: 'Architecture' });
+  // Collection.create({ name: 'Miscellaneous' });
   // await Product.create({
   //   title: 'Dark Night',
   //   description: 'photo of the moony',

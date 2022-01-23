@@ -17,7 +17,11 @@ const Product = sequelize.define('product', {
     type: DataTypes.STRING,
     allowNull: true,
   },
-  price: {
+  priceInPounds: {
+    type: DataTypes.DECIMAL(10, 2),
+    allowNull: false,
+  },
+  priceInPence: {
     type: DataTypes.INTEGER,
     allowNull: false,
   },
