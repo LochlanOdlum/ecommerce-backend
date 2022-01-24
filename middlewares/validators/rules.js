@@ -40,6 +40,10 @@ exports.getMyOrder = () => {
   ];
 };
 
+exports.postCollection = () => {
+  return [body('collectionName').not().isEmpty().withMessage('Must include a collectionName')];
+};
+
 // exports.getMyOrders = () => {
 //   return [
 //     body('orderIds')

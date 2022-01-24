@@ -1,6 +1,7 @@
 const fs = require('fs/promises');
 
 const Product = require('../models/product');
+const Collection = require('../models/collection');
 const s3 = require('../util/s3');
 
 exports.postPhoto = async (req, res, next) => {
@@ -22,7 +23,7 @@ exports.postPhoto = async (req, res, next) => {
     const array = Array.from(String(pence));
     array.splice(array.length - 2, 0, '.');
 
-    return array.join('');
+    return +array.join('');
   };
 
   const priceInPounds = priceToPounds(priceInPence);
@@ -66,4 +67,12 @@ exports.postPhoto = async (req, res, next) => {
   });
 
   res.status(200).json({ message: 'Photo created' });
+};
+
+exports.postCollection = async (req, res, next) => {
+  const { collectionName } = req.body;
+
+  await Collection.create({ name: collectionName });
+
+  res.send({ message: 'Successfully added collection' });
 };
