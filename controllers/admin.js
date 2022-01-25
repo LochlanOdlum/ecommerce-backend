@@ -17,16 +17,16 @@ exports.postPhoto = async (req, res, next) => {
   //  size: 197854
   // }
 
-  const { title, description, priceInPence } = req.body;
+  const { title, description, priceInPounds, collectionId } = req.body;
 
-  const priceToPounds = (pence) => {
-    const array = Array.from(String(pence));
-    array.splice(array.length - 2, 0, '.');
+  // const priceToPounds = (pence) => {
+  //   const array = Array.from(String(pence));
+  //   array.splice(array.length - 2, 0, '.');
 
-    return +array.join('');
-  };
+  //   return +array.join('');
+  // };
 
-  const priceInPounds = priceToPounds(priceInPence);
+  const priceInPence = +priceInPounds * 100;
 
   const uploadPromises = [];
 
@@ -54,6 +54,7 @@ exports.postPhoto = async (req, res, next) => {
   await Product.create({
     title,
     description,
+    collectionId,
     priceInPence,
     priceInPounds,
     rawImageKey: rawResponse.Key,
