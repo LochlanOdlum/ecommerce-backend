@@ -39,6 +39,7 @@ exports.getCollections = async (req, res, next) => {
 
 //Recieve order = {itemIds: [id1, id2, ...], stripeReceiptEmail?}
 //Starts an order, creates paymentIntent but still needs to be paid.
+//Once paid then seperate webhook middleware activated by stripe will then update the isPaymentCompleted
 exports.startOrder = async (req, res, next) => {
   const { itemIds } = req.body;
 
@@ -55,7 +56,7 @@ exports.startOrder = async (req, res, next) => {
 
   //Get total cost of order from products using order items.
 
-  const totalCostInPence = products.reduce((accumulator, current) => accumulator + +current.price, 0);
+  const totalCostInPence = products.reduce((accumulator, current) => accumulator + +current.priceInPence, 0);
 
   //Create payment Intent
 
