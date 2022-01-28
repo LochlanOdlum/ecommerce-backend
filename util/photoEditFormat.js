@@ -6,13 +6,7 @@ const sizeOf = promisify(require('image-size'));
 const getAverageColor = require('fast-average-color-node').getAverageColor;
 
 //First scales down image to specified height then crops the image to width from center
-const shrinkandcrop = (
-  image,
-  imageWidth,
-  imageHeight,
-  shrinkHeight,
-  cropWidth
-) => {
+const shrinkandcrop = (image, imageWidth, imageHeight, shrinkHeight, cropWidth) => {
   const resizedWidth = (shrinkHeight / imageHeight) * imageWidth;
 
   return sharp(image)
@@ -26,9 +20,7 @@ const shrinkandcrop = (
     .toBuffer();
 };
 exports.watermark = async (rawImagePath, rawImageFilename) => {
-  const { width: rawPhotoWidth, height: rawPhotoHeight } = await sizeOf(
-    rawImagePath
-  );
+  const { width: rawPhotoWidth, height: rawPhotoHeight } = await sizeOf(rawImagePath);
 
   const { isDark } = await getAverageColor(rawImagePath);
 
@@ -72,30 +64,15 @@ exports.watermark = async (rawImagePath, rawImageFilename) => {
 
   //Medium sized image then cropped horizontally to square
   //For use on shop page with list of all photos for sale
-  promises.push(
-    shrinkandcrop(
-      fullWatermarkedImageBuffer,
-      rawPhotoWidth,
-      rawPhotoHeight,
-      500,
-      500
-    )
-  );
+  promises.push(shrinkandcrop(fullWatermarkedImageBuffer, rawPhotoWidth, rawPhotoHeight, 500, 500));
 
-  const [mediumWatermarkedBuffer, mediumCroppedSquareWatermarkedBuffer] =
-    await Promise.all(promises);
+  const [mediumWatermarkedBuffer, mediumCroppedSquareWatermarkedBuffer] = await Promise.all(promises);
 
-  return [
-    fullWatermarkedImageBuffer,
-    mediumWatermarkedBuffer,
-    mediumCroppedSquareWatermarkedBuffer,
-  ];
+  return [fullWatermarkedImageBuffer, mediumWatermarkedBuffer, mediumCroppedSquareWatermarkedBuffer];
 };
 
-exports.shrinkRawAndSquare = async (rawImagePath) => {
-  const { width: rawPhotoWidth, height: rawPhotoHeight } = await sizeOf(
-    rawImagePath
-  );
+exports.shrinkRawMedium = async (rawImagePath) => {
+  // const { width: rawPhotoWidth, height: rawPhotoHeight } = await sizeOf(rawImagePath);
 
-  return shrinkandcrop(rawImagePath, rawPhotoWidth, rawPhotoHeight, 500, 500);
+  return sharp(rawImagePath).resize(null, 500).toBuffer();
 };

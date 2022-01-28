@@ -12,21 +12,19 @@ const s3 = new S3({
 });
 
 exports.uploadRawAndDownscaledSquare = async (file) => {
-  const downscaledSquareImageBuffer = await photoEditFormat.shrinkRawAndSquare(
-    file.path
-  );
+  const rawMediumImageBuffer = await photoEditFormat.shrinkRawMedium(file.path);
 
   const fileStream = fs.createReadStream(file.path);
 
   const uploadPromises = [];
 
-  const uploadParamsMediumSquare = {
-    Bucket: process.env.AWS_BUCKET_MEDIUM_SQUARE_PHOTOS,
-    Body: Readable.from(downscaledSquareImageBuffer),
+  const uploadParamsRawMedium = {
+    Bucket: process.env.AWS_BUCKET_MEDIUM_PHOTOS,
+    Body: Readable.from(rawMediumImageBuffer),
     Key: file.filename,
   };
 
-  uploadPromises.push(s3.upload(uploadParamsMediumSquare).promise());
+  uploadPromises.push(s3.upload(uploadParamsRawMedium).promise());
 
   const uploadParamsRaw = {
     Bucket: process.env.AWS_BUCKET_RAW_PHOTOS_NAME,
@@ -41,11 +39,8 @@ exports.uploadRawAndDownscaledSquare = async (file) => {
 
 //File must be a multer file object
 exports.watermarkAndUpload = async (file) => {
-  const [
-    fullWatermarkedImageBuffer,
-    mediumWatermarkedBuffer,
-    mediumCroppedSquareWatermarkedBuffer,
-  ] = await photoEditFormat.watermark(file.path, file.filename);
+  const [fullWatermarkedImageBuffer, mediumWatermarkedBuffer, mediumCroppedSquareWatermarkedBuffer] =
+    await photoEditFormat.watermark(file.path, file.filename);
 
   console.log('Recieved image buffers');
 
@@ -73,12 +68,9 @@ exports.watermarkAndUpload = async (file) => {
 
   //Downscaled to medium then cropped square upload
   console.log('heyy');
-  console.log(
-    process.env.AWS_BUCKET_MEDIUM_CROPPED_SQUARE_WATERMARKED_PHOTOS_NAME
-  );
+  console.log(process.env.AWS_BUCKET_MEDIUM_CROPPED_SQUARE_WATERMARKED_PHOTOS_NAME);
   const uploadParamsMediumSquare = {
-    Bucket:
-      process.env.AWS_BUCKET_MEDIUM_CROPPED_SQUARE_WATERMARKED_PHOTOS_NAME,
+    Bucket: process.env.AWS_BUCKET_MEDIUM_CROPPED_SQUARE_WATERMARKED_PHOTOS_NAME,
     Body: Readable.from(mediumCroppedSquareWatermarkedBuffer),
     Key: file.filename,
   };

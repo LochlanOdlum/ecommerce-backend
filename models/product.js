@@ -29,7 +29,7 @@ const Product = sequelize.define('product', {
     type: DataTypes.STRING,
     allowNull: false,
   },
-  mediumSquareImageKey: {
+  mediumRawResponse: {
     type: DataTypes.STRING,
     allowNull: false,
   },

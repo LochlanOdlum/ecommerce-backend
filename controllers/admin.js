@@ -30,12 +30,12 @@ exports.postPhoto = async (req, res, next) => {
 
   const uploadPromises = [];
 
-  uploadPromises.push(s3.uploadRawAndDownscaledSquare(req.file));
+  uploadPromises.push(s3.uploadRawAndDownscaledRaw(req.file));
   uploadPromises.push(s3.watermarkAndUpload(req.file));
 
   const [rawResponses, watermarkResponses] = await Promise.all(uploadPromises);
 
-  const [mediumSquareResponse, rawResponse] = rawResponses;
+  const [mediumRawResponse, rawResponse] = rawResponses;
 
   const [fullWatermarkResponse, mediumWatermarkResponse, mediumCroppedWatermarkResponse] = watermarkResponses;
 
@@ -58,7 +58,7 @@ exports.postPhoto = async (req, res, next) => {
     priceInPence,
     priceInPounds,
     rawImageKey: rawResponse.Key,
-    mediumSquareImageKey: mediumSquareResponse.Key,
+    mediumRawImageKey: mediumRawResponse.Key,
     fullWatermarkedImageKey: fullWatermarkResponse.Key,
     fullWatermarkedImagePublicURL: fullWatermarkResponse.Location,
     mediumWatermarkedImageKey: mediumWatermarkResponse.Key,

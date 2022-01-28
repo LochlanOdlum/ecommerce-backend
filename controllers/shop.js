@@ -86,7 +86,7 @@ exports.startOrder = async (req, res, next) => {
       order.createOrderItem({
         title: product.title,
         description: product.description,
-        price: product.price,
+        price: product.priceInPence,
         rawImageKey: product.rawImageKey,
         productId: product.id,
       })
