@@ -28,16 +28,19 @@ exports.postPhoto = async (req, res, next) => {
 
   const priceInPence = +priceInPounds * 100;
 
-  const uploadPromises = [];
+  const S3ResponsePromises = await s3.uploadPhotos(req.file);
+  console.log(S3ResponsePromises);
 
-  uploadPromises.push(s3.uploadRawAndDownscaledRaw(req.file));
-  uploadPromises.push(s3.watermarkAndUpload(req.file));
+  const [
+    photoRes,
+    photoMedRes,
+    photoMedCropped2to1Res,
+    photoWmarkedLrgRes,
+    photoWmarkedMedRes,
+    photoWmarkedMedSquareRes,
+  ] = await Promise.all(S3ResponsePromises);
 
-  const [rawResponses, watermarkResponses] = await Promise.all(uploadPromises);
-
-  const [mediumRawResponse, rawResponse] = rawResponses;
-
-  const [fullWatermarkResponse, mediumWatermarkResponse, mediumCroppedWatermarkResponse] = watermarkResponses;
+  console.log(photoRes);
 
   // const rawResponse = await s3.uploadRaw(req.file);
   // const watermarkedResponse = await s3.watermarkAndUpload(req.file);
@@ -57,14 +60,15 @@ exports.postPhoto = async (req, res, next) => {
     collectionId,
     priceInPence,
     priceInPounds,
-    rawImageKey: rawResponse.Key,
-    mediumRawImageKey: mediumRawResponse.Key,
-    fullWatermarkedImageKey: fullWatermarkResponse.Key,
-    fullWatermarkedImagePublicURL: fullWatermarkResponse.Location,
-    mediumWatermarkedImageKey: mediumWatermarkResponse.Key,
-    mediumWatermarkedImagePublicURL: mediumWatermarkResponse.Location,
-    mediumCroppedSquareWatermarkedImageKey: mediumCroppedWatermarkResponse.Key,
-    mediumCroppedSquareWatermarkedImagePublicURL: mediumCroppedWatermarkResponse.Location,
+    imageKey: photoRes.Key,
+    imageMedKey: photoMedRes.Key,
+    imageMedCropped2to1Key: photoMedCropped2to1Res.Key,
+    imageWmarkedLrgKey: photoWmarkedLrgRes.Key,
+    imageWmarkedLrgPublicURL: photoWmarkedLrgRes.Location,
+    imageWmarkedMedKey: photoWmarkedMedRes.Key,
+    imageWmarkedMedPublicURL: photoWmarkedMedRes.Location,
+    imageWmarkedMedSquareKey: photoWmarkedMedSquareRes.Key,
+    imageWmarkedMedSquarePublicURL: photoWmarkedMedSquareRes.Location,
   });
 
   res.status(200).json({ message: 'Photo created' });

@@ -78,17 +78,16 @@ exports.startOrder = async (req, res, next) => {
 
   const promises = [];
 
-  //Reserve products so other users cannot buy a product which someone else is buying
   products.forEach((product) => {
-    // product.isReserved = true;
-    // promises.push(product.save());
     promises.push(
       order.createOrderItem({
         title: product.title,
         description: product.description,
         price: product.priceInPence,
-        rawImageKey: product.rawImageKey,
         productId: product.id,
+        imageKey: product.imageKey,
+        imageMedKey: product.imageMedKey,
+        imageMedCropped2to1Key: product.imageMedCropped2to1Key,
       })
     );
   });
@@ -115,13 +114,6 @@ exports.startOrder = async (req, res, next) => {
       stripe.paymentIntents.cancel(upToDatePaymentIntent.id);
 
       upToDateOrder.destroy();
-
-      // products.forEach((product) => {
-      //   if (!product.isPurchased) {
-      //     product.isAvaliableForPurchase = true;
-      //     product.save();
-      //   }
-      // });
     } catch (error) {
       console.error(error);
     }

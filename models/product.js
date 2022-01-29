@@ -25,35 +25,39 @@ const Product = sequelize.define('product', {
     type: DataTypes.INTEGER,
     allowNull: false,
   },
-  rawImageKey: {
+  imageKey: {
     type: DataTypes.STRING,
     allowNull: false,
   },
-  mediumRawResponse: {
+  imageMedKey: {
     type: DataTypes.STRING,
     allowNull: false,
   },
-  fullWatermarkedImageKey: {
+  imageMedCropped2to1Key: {
     type: DataTypes.STRING,
     allowNull: false,
   },
-  fullWatermarkedImagePublicURL: {
+  imageWmarkedLrgKey: {
     type: DataTypes.STRING,
     allowNull: false,
   },
-  mediumWatermarkedImageKey: {
+  imageWmarkedLrgPublicURL: {
     type: DataTypes.STRING,
     allowNull: false,
   },
-  mediumWatermarkedImagePublicURL: {
+  imageWmarkedMedKey: {
     type: DataTypes.STRING,
     allowNull: false,
   },
-  mediumCroppedSquareWatermarkedImageKey: {
+  imageWmarkedMedPublicURL: {
     type: DataTypes.STRING,
     allowNull: false,
   },
-  mediumCroppedSquareWatermarkedImagePublicURL: {
+  imageWmarkedMedSquareKey: {
+    type: DataTypes.STRING,
+    allowNull: false,
+  },
+  imageWmarkedMedSquarePublicURL: {
     type: DataTypes.STRING,
     allowNull: false,
   },
