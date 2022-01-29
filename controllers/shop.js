@@ -7,6 +7,16 @@ const Order = require('../models/order');
 const OrderItem = require('../models/order-item');
 const Collection = require('../models/collection');
 
+//Order must be a order model instance from sequelize
+const checkAndUpdateIfPaymentComplete = async (order) => {
+  const paymentIntent = await stripe.paymentIntents.retrieve(order.paymentIntentId);
+
+  if (paymentIntent.status === 'succeeded') {
+    order.isPaymentCompleted = true;
+    await order.save();
+  }
+};
+
 exports.getProducts = async (req, res, next) => {
   const products = await Product.findAll({
     where: { isAvaliableForPurchase: true },
@@ -48,7 +58,6 @@ exports.startOrder = async (req, res, next) => {
   });
 
   if (products.length !== itemIds.length) {
-    console.log(products);
     const error = new Error('Could not match each item Id to an existing unique product.');
     error.statusCode = 400;
     return next(error);
@@ -125,19 +134,28 @@ exports.startOrder = async (req, res, next) => {
 
 exports.getMyOrder = async (req, res, next) => {
   const { id: orderId } = req.params;
+
+  const orderId = +req.params.id;
   const userId = req.userId;
 
   //Finding order directly rather than using user.getOrder(...), so custom error message for when order exists but not belonging to authenticated user.
   const order = await Order.findOne({
-    where: { id: orderId, isPaymentCompleted: true },
+    where: { id: orderId },
     include: [User, OrderItem],
   });
 
-  if (!order) {
+  //Check if payment has been completed yet with manual query to stripe
+  if (!order.isPaymentCompleted) {
+    await checkAndUpdateIfPaymentComplete(order);
+  }
+
+  if (!order || !order.isPaymentCompleted) {
     const error = new Error('Could not find an order with this id');
     error.statusCode = 404;
     return next(error);
   }
+
+  //If payment isnt completed. Query stripe to check if payment has yet been sent to them. Then return response to client
 
   if (order.userId !== userId) {
     const error = new Error(`Unauthorised. This order isn't yours.`);
@@ -161,14 +179,26 @@ exports.getMyOrders = async (req, res, next) => {
 
   const orders = await user.getOrders({
     include: OrderItem,
-    where: { isPaymentCompleted: true },
   });
 
-  const ordersReturn = orders.map((order) => ({
+  const updatePromises = [];
+
+  orders.forEach((order) => {
+    if (!order.isPaymentCompleted) {
+      updatePromises.push(checkAndUpdateIfPaymentComplete(order));
+    }
+  });
+
+  await Promise.all(updatePromises);
+
+  const paymentCompletedOrders = orders.filter((order) => order.isPaymentCompleted);
+
+  const ordersReturn = paymentCompletedOrders.map((order) => ({
     id: order.id,
     isPaymentCompleted: order.isPaymentCompleted,
     createdAt: order.createdAt,
     orderItems: order.orderItems,
+    totalPriceInPence: order.totalPriceInPence,
   }));
 
   res.status(200).json({ orders: ordersReturn });

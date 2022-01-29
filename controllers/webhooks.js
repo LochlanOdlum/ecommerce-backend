@@ -29,10 +29,6 @@ exports.stripewhook = async (req, res) => {
 
     const orderProductIds = order.orderItems.map((item) => item.productId);
 
-    console.log(order);
-    console.log(order.orderItems);
-    console.log(orderProductIds);
-
     orderProductIds.forEach(async (id) => {
       const product = await Product.findOne({ where: { id } });
       product.isPurchased = true;
