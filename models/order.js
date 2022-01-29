@@ -13,7 +13,7 @@ const Order = sequelize.define('order', {
     type: DataTypes.STRING,
     allowNull: false,
   },
-  totalPrice: {
+  totalPriceInPence: {
     type: DataTypes.INTEGER,
     allowNull: false,
   },

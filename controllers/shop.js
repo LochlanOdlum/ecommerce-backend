@@ -73,7 +73,7 @@ exports.startOrder = async (req, res, next) => {
   const order = await user.createOrder({
     paymentIntentId: paymentIntent.id,
     isPaymentCompleted: false,
-    totalPrice: totalCostInPence,
+    totalPriceInPence: totalCostInPence,
   });
 
   const promises = [];
@@ -83,7 +83,8 @@ exports.startOrder = async (req, res, next) => {
       order.createOrderItem({
         title: product.title,
         description: product.description,
-        price: product.priceInPence,
+        priceInPence: product.priceInPence,
+        priceInPounds: product.priceInPounds,
         productId: product.id,
         imageKey: product.imageKey,
         imageMedKey: product.imageMedKey,

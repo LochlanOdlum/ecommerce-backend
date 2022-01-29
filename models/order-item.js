@@ -14,10 +14,14 @@ const orderItem = sequelize.define('orderItem', {
     allowNull: false,
   },
   description: {
-    type: DataTypes.STRING,
+    type: DataTypes.STRING(1023),
     allowNull: true,
   },
-  price: {
+  priceInPounds: {
+    type: DataTypes.INTEGER,
+    allowNull: false,
+  },
+  priceInPence: {
     type: DataTypes.INTEGER,
     allowNull: false,
   },
