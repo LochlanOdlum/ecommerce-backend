@@ -7,6 +7,8 @@ const Order = require('../models/order');
 const OrderItem = require('../models/order-item');
 const Collection = require('../models/collection');
 
+const s3 = require('../util/s3');
+
 //Order must be a order model instance from sequelize
 const checkAndUpdateIfPaymentComplete = async (order) => {
   const paymentIntent = await stripe.paymentIntents.retrieve(order.paymentIntentId);
@@ -50,6 +52,7 @@ exports.getCollections = async (req, res, next) => {
 //Recieve order = {itemIds: [id1, id2, ...], stripeReceiptEmail?}
 //Starts an order, creates paymentIntent but still needs to be paid.
 //Once paid then seperate webhook middleware activated by stripe will then update the isPaymentCompleted
+//TODO: STOP USER ORDERING PHOTO MORE THAN ONCE
 exports.startOrder = async (req, res, next) => {
   const { itemIds } = req.body;
 
@@ -133,9 +136,8 @@ exports.startOrder = async (req, res, next) => {
 };
 
 exports.getMyOrder = async (req, res, next) => {
-  const { id: orderId } = req.params;
-
   const orderId = +req.params.id;
+  console.log(orderId);
   const userId = req.userId;
 
   //Finding order directly rather than using user.getOrder(...), so custom error message for when order exists but not belonging to authenticated user.
@@ -166,9 +168,9 @@ exports.getMyOrder = async (req, res, next) => {
   res.status(200).json({
     order: {
       id: orderId,
-      isPaymentCompleted: order.isPaymentCompleted,
       createdAt: order.createdAt,
       orderItems: order.orderItems,
+      totalPriceInPence: order.totalPriceInPence,
     },
   });
 };
@@ -195,7 +197,6 @@ exports.getMyOrders = async (req, res, next) => {
 
   const ordersReturn = paymentCompletedOrders.map((order) => ({
     id: order.id,
-    isPaymentCompleted: order.isPaymentCompleted,
     createdAt: order.createdAt,
     orderItems: order.orderItems,
     totalPriceInPence: order.totalPriceInPence,
@@ -216,4 +217,70 @@ exports.orderSuccess = async (req, res, next) => {
   // }
 
   res.redirect(`/shop/myOrder/${order.id}`);
+};
+
+exports.getImageMedCropped2to1 = async (req, res, next) => {
+  const { key } = req.params;
+
+  const userOrders = await req.user.getOrders({ include: OrderItem });
+  const userOrderItems = [];
+  userOrders.forEach((order) => userOrderItems.push(...order.orderItems));
+
+  const orderItemWithKey = userOrderItems.find((orderItem) => orderItem.imageMedCropped2to1Key === key);
+
+  console.log(orderItemWithKey);
+  if (!orderItemWithKey) {
+    const error = new Error('You have not purchased a photo with this key');
+    error.statusCode = 404;
+    return next(error);
+  }
+
+  try {
+    const readStream = s3.getPhoto(process.env.AWS_BUCKET_MED_CROPPED_PHOTOS, key);
+
+    readStream.on('error', (err) => {
+      const error = new Error('Could not find image with that key');
+      error.statusCode = 404;
+      return next(error);
+    });
+
+    readStream.pipe(res);
+  } catch (err) {
+    const error = new Error('Could not find image with that key');
+    error.statusCode = 404;
+    return next(error);
+  }
+};
+
+exports.getImage = async (req, res, next) => {
+  const { key } = req.params;
+
+  const userOrders = await req.user.getOrders({ include: OrderItem });
+  const userOrderItems = [];
+  userOrders.forEach((order) => userOrderItems.push(...order.orderItems));
+
+  const orderItemWithKey = userOrderItems.find((orderItem) => orderItem.imageKey === key);
+
+  console.log(orderItemWithKey);
+  if (!orderItemWithKey) {
+    const error = new Error('You have not purchased a photo with this key');
+    error.statusCode = 404;
+    return next(error);
+  }
+
+  try {
+    const readStream = s3.getPhoto(process.env.AWS_BUCKET_PHOTOS, key);
+
+    readStream.on('error', (err) => {
+      const error = new Error('Could not find image with that key');
+      error.statusCode = 404;
+      return next(error);
+    });
+
+    readStream.pipe(res);
+  } catch (err) {
+    const error = new Error('Could not find image with that key');
+    error.statusCode = 404;
+    return next(error);
+  }
 };

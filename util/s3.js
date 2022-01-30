@@ -107,6 +107,7 @@ const uploadfilePathToS3 = (bucket, filePath, keyName) => {
 exports.uploadPhotos = async (file) => {
   const imagePath = file.path;
   const keyName = file.filename;
+  //TODO: Figure out a way to not load entire image into memory at full scale (could be ~20MB for biggest photos!)
   const photoWatermarkedBuffer = await imageProcess.watermarkPhoto(imagePath);
 
   //GETTING PHOTO BUFFERS
@@ -115,9 +116,6 @@ exports.uploadPhotos = async (file) => {
   const photoWmarkedLrgBuffer = await imageProcess.photoLrg(photoWatermarkedBuffer);
   const photoWmarkedMedBuffer = await imageProcess.photoMed(photoWatermarkedBuffer);
   const photoWmarkedMedSquareBuffer = await imageProcess.photoMedCropped1to1(photoWatermarkedBuffer);
-
-  //Seperate overlay function here, pass in watermark buffer and image and return watermarked image?
-  //That way don't need to store entire raw (Watermarked) photo in memory
 
   //UPLOADING PHOTO BUFFERS + ACTUAL PHOTO FROM LOCAL FS
   const photoResPromise = uploadfilePathToS3(process.env.AWS_BUCKET_PHOTOS, imagePath, keyName);
@@ -145,9 +143,6 @@ exports.uploadPhotos = async (file) => {
 
   //RETURNING PROMISES OF PHOTO UPLOADS TO BUCKET
 
-  console.log('about to return promises');
-  console.log(photoResPromise);
-
   return [
     photoResPromise,
     photoMedResPromise,
@@ -158,20 +153,14 @@ exports.uploadPhotos = async (file) => {
   ];
 };
 
-exports.getRawPhoto = (key) => {
+exports.getPhoto = (bucket, key) => {
   const downloadParams = {
     Key: key,
-    Bucket: process.env.AWS_BUCKET_RAW_PHOTOS_NAME,
+    Bucket: bucket,
   };
-
-  return s3.getObject(downloadParams).createReadStream();
-};
-
-exports.getWatermarkedPhoto = (key) => {
-  const downloadParams = {
-    Key: key,
-    Bucket: process.env.AWS_BUCKET_FULL_WATERMARKED_PHOTOS_NAME,
-  };
-
-  return s3.getObject(downloadParams).createReadStream();
+  try {
+    return s3.getObject(downloadParams).createReadStream();
+  } catch (error) {
+    throw error;
+  }
 };
