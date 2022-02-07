@@ -2,6 +2,9 @@ const fs = require('fs/promises');
 
 const Product = require('../models/product');
 const Collection = require('../models/collection');
+const Order = require('../models/order');
+const OrderItem = require('../models/order-item');
+const User = require('../models/user');
 const s3 = require('../util/s3');
 
 exports.postPhoto = async (req, res, next) => {
@@ -80,4 +83,55 @@ exports.postCollection = async (req, res, next) => {
   await Collection.create({ name: collectionName });
 
   res.send({ message: 'Successfully added collection' });
+};
+
+exports.getPhotos = async (req, res, next) => {
+  try {
+    const { page: pageParam, resultsPerPage: resultsPerPageParam } = req.query;
+    const page = +pageParam;
+    const resultsPerPage = +resultsPerPageParam;
+    const offset = (page - 1) * resultsPerPage;
+    const products = await Product.findAll({ limit: resultsPerPage, offset });
+    res.send({ products });
+  } catch {
+    const error = new Error('Could not find all orders');
+    error.statusCode = 500;
+    return next(error);
+  }
+};
+
+exports.getOrders = async (req, res, next) => {
+  try {
+    const { page: pageParam, resultsPerPage: resultsPerPageParam } = req.query;
+    const page = +pageParam;
+    const resultsPerPage = +resultsPerPageParam;
+    const offset = (page - 1) * resultsPerPage;
+    const orders = await Order.findAll({ include: OrderItem, limit: resultsPerPage, offset });
+    res.send({ orders });
+  } catch {
+    const error = new Error('Could not find all orders');
+    error.statusCode = 500;
+    return next(error);
+  }
+};
+
+exports.getUsers = async (req, res, next) => {
+  try {
+    const { page: pageParam, resultsPerPage: resultsPerPageParam } = req.query;
+    const page = +pageParam;
+    const resultsPerPage = +resultsPerPageParam;
+    const offset = (page - 1) * resultsPerPage;
+    const users = await User.findAll({ limit: resultsPerPage, offset });
+    const usersResponse = users.map((user) => ({
+      id: user.id,
+      email: user.email,
+      name: user.name,
+      createdAt: user.createdAt,
+    }));
+    res.send({ users: usersResponse });
+  } catch {
+    const error = new Error('Could not find all orders');
+    error.statusCode = 500;
+    return next(error);
+  }
 };
