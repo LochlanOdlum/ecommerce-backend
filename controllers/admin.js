@@ -91,8 +91,9 @@ exports.getPhotos = async (req, res, next) => {
     const page = +pageParam;
     const resultsPerPage = +resultsPerPageParam;
     const offset = (page - 1) * resultsPerPage;
-    const products = await Product.findAll({ limit: resultsPerPage, offset });
-    res.send({ products });
+    const { count, rows: products } = await Product.findAndCountAll({ limit: resultsPerPage, offset });
+    const pageCount = Math.ceil(count / resultsPerPage);
+    res.send({ products, pageCount, count });
   } catch {
     const error = new Error('Could not find all orders');
     error.statusCode = 500;
@@ -106,8 +107,13 @@ exports.getOrders = async (req, res, next) => {
     const page = +pageParam;
     const resultsPerPage = +resultsPerPageParam;
     const offset = (page - 1) * resultsPerPage;
-    const orders = await Order.findAll({ include: OrderItem, limit: resultsPerPage, offset });
-    res.send({ orders });
+    const { count, rows: orders } = await Order.findAndCountAll({
+      include: [OrderItem, User],
+      limit: resultsPerPage,
+      offset,
+    });
+    const pageCount = Math.ceil(count / resultsPerPage);
+    res.send({ orders, pageCount, count });
   } catch {
     const error = new Error('Could not find all orders');
     error.statusCode = 500;
@@ -121,14 +127,15 @@ exports.getUsers = async (req, res, next) => {
     const page = +pageParam;
     const resultsPerPage = +resultsPerPageParam;
     const offset = (page - 1) * resultsPerPage;
-    const users = await User.findAll({ limit: resultsPerPage, offset });
+    const { count, rows: users } = await User.findAndCountAll({ limit: resultsPerPage, offset });
     const usersResponse = users.map((user) => ({
       id: user.id,
       email: user.email,
       name: user.name,
       createdAt: user.createdAt,
     }));
-    res.send({ users: usersResponse });
+    const pageCount = Math.ceil(count / resultsPerPage);
+    res.send({ users: usersResponse, pageCount, count });
   } catch {
     const error = new Error('Could not find all orders');
     error.statusCode = 500;
