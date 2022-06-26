@@ -9,6 +9,10 @@ const Product = sequelize.define('product', {
     allowNull: false,
     primaryKey: true,
   },
+  orderPosition: {
+    type: DataTypes.INTEGER,
+    allowNull: false,
+  },
   title: {
     type: DataTypes.STRING,
     allowNull: false,

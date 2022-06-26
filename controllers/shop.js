@@ -22,6 +22,7 @@ const checkAndUpdateIfPaymentComplete = async (order) => {
 exports.getProducts = async (req, res, next) => {
   const products = await Product.findAll({
     where: { isAvaliableForPurchase: true },
+    order: [['orderPosition', 'ASC']],
   });
 
   res.json(products);
