@@ -15,6 +15,8 @@ router.use(isAuth, fetchUser, isAdmin);
 
 router.post('/photo', upload.single('image'), adminController.postPhoto);
 
+router.patch('/photo/:id', adminController.editPhoto);
+
 router.post('/collection', validationRules.postCollection(), validators.validate, adminController.postCollection);
 
 router.get('/photos', adminController.getPhotos);

@@ -1,5 +1,7 @@
 const fs = require('fs/promises');
 
+const { Op } = require('sequelize');
+
 const Product = require('../models/product');
 const Collection = require('../models/collection');
 const Order = require('../models/order');
@@ -91,7 +93,11 @@ exports.getPhotos = async (req, res, next) => {
     const page = +pageParam;
     const resultsPerPage = +resultsPerPageParam;
     const offset = (page - 1) * resultsPerPage;
-    const { count, rows: products } = await Product.findAndCountAll({ limit: resultsPerPage, offset });
+    const { count, rows: products } = await Product.findAndCountAll({
+      limit: resultsPerPage,
+      offset,
+      order: [['orderPosition', 'ASC']],
+    });
     const pageCount = Math.ceil(count / resultsPerPage);
     res.send({ products, pageCount, count });
   } catch {
@@ -99,6 +105,35 @@ exports.getPhotos = async (req, res, next) => {
     error.statusCode = 500;
     return next(error);
   }
+};
+
+exports.editPhoto = async (req, res, next) => {
+  const { id: photoId } = req.params;
+  //Edited values
+  const { orderPosition, title, description, collectionId, priceInPence } = req.body.editedFields;
+
+  const photo = await Product.findOne({ where: { id: photoId } });
+
+  //Changing order position is a special case as it requires changing values of other rows as well! Need to handle this.
+
+  if (orderPosition) {
+    const incrementAmount = orderPosition > photo.orderPosition ? -1 : 1;
+    const lowerLimit = orderPosition > photo.orderPosition ? photo.orderPosition - incrementAmount : orderPosition;
+    const upperLimit = orderPosition < photo.orderPosition ? photo.orderPosition - incrementAmount : orderPosition;
+
+    await Product.increment('orderPosition', {
+      by: incrementAmount,
+      where: {
+        orderPosition: {
+          [Op.between]: [lowerLimit, upperLimit],
+        },
+      },
+    });
+  }
+
+  await photo.update({ orderPosition, title, description, collectionId, priceInPence });
+
+  res.status(200).json({ message: 'Photo edited successfuly' });
 };
 
 exports.getOrders = async (req, res, next) => {
