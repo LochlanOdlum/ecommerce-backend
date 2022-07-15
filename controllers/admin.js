@@ -87,6 +87,20 @@ exports.postCollection = async (req, res, next) => {
   res.send({ message: 'Successfully added collection' });
 };
 
+exports.editCollection = async (req, res, next) => {
+  console.log('working');
+  const { id: collectionId } = req.params;
+  console.log(req.body);
+  const { updatedCollectionName } = req.body;
+
+  console.log(collectionId);
+  console.log(updatedCollectionName);
+
+  await Collection.update({ name: updatedCollectionName }, { where: { id: collectionId } });
+
+  res.send({ message: 'Successfully edited collection' });
+};
+
 exports.getPhotos = async (req, res, next) => {
   try {
     const { page: pageParam, resultsPerPage: resultsPerPageParam } = req.query;
@@ -109,14 +123,25 @@ exports.getPhotos = async (req, res, next) => {
 
 exports.editPhoto = async (req, res, next) => {
   const { id: photoId } = req.params;
+
+  for (let key in req.body) {
+    if (req.body[key] === 'undefined') {
+      req.body[key] = undefined;
+    }
+  }
+
   //Edited values
-  const { orderPosition, title, description, collectionId, priceInPence } = req.body.editedFields;
+  const { title, description, collectionId, priceInPence } = req.body;
+  let orderPosition = req.body.orderPosition;
 
   const photo = await Product.findOne({ where: { id: photoId } });
 
   //Changing order position is a special case as it requires changing values of other rows as well! Need to handle this.
 
   if (orderPosition) {
+    const productCount = await Product.count();
+    orderPosition = Math.min(productCount, orderPosition);
+
     const incrementAmount = orderPosition > photo.orderPosition ? -1 : 1;
     const lowerLimit = orderPosition > photo.orderPosition ? photo.orderPosition - incrementAmount : orderPosition;
     const upperLimit = orderPosition < photo.orderPosition ? photo.orderPosition - incrementAmount : orderPosition;

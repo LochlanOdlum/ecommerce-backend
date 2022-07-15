@@ -15,9 +15,11 @@ router.use(isAuth, fetchUser, isAdmin);
 
 router.post('/photo', upload.single('image'), adminController.postPhoto);
 
-router.patch('/photo/:id', adminController.editPhoto);
+router.patch('/photo/:id', upload.single('image'), adminController.editPhoto);
 
 router.post('/collection', validationRules.postCollection(), validators.validate, adminController.postCollection);
+
+router.patch('/collection/:id', adminController.editCollection);
 
 router.get('/photos', adminController.getPhotos);
 
