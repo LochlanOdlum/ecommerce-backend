@@ -182,23 +182,24 @@ exports.getOrderDetails = async (req, res, next) => {
     let user;
 
     //1: Get order
-    const order = await Order.findOne({ where: { id: orderId } });
+    const orderInstance = await Order.findOne({ include: [OrderItem], where: { id: orderId } });
 
-    if (!order) {
+    if (!orderInstance) {
       const error = new Error('Could not find an order with this id');
       error.statusCode = 500;
       return next(error);
     }
 
+    const orderJSON = orderInstance.toJSON();
+
     //2: If order belongs to a user, fetch user and send in return request!
-    if (order.userId) {
-      user = await User.findOne({ where: { id: order.userId } });
+    if (orderInstance.userId) {
+      user = await User.findOne({ where: { id: orderInstance.userId } });
     }
 
     //3: Return response!
-    res.send({ order, user });
+    res.send({ order: { ...orderJSON, user } });
   } catch (e) {
-    console.error(e);
     const error = new Error('Could not get order details');
     error.statusCode = 500;
     return next(error);
@@ -222,6 +223,27 @@ exports.getUsers = async (req, res, next) => {
     res.send({ users: usersResponse, pageCount, count });
   } catch {
     const error = new Error('Could not find all orders');
+    error.statusCode = 500;
+    return next(error);
+  }
+};
+
+exports.getUser = async (req, res, next) => {
+  try {
+    const { id: userId } = req.params;
+
+    const user = await User.findOne({ where: { id: userId } });
+
+    if (!user) {
+      const error = new Error('Could not find user with this id');
+      error.statusCode = 500;
+      return next(error);
+    }
+
+    res.send({ user });
+  } catch (e) {
+    console.error(e);
+    const error = new Error('Could not get user');
     error.statusCode = 500;
     return next(error);
   }
