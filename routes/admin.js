@@ -25,6 +25,8 @@ router.get('/photos', adminController.getPhotos);
 
 router.get('/orders', adminController.getOrders);
 
+router.get('/orderDetails/:id', adminController.getOrderDetails);
+
 router.get('/users', adminController.getUsers);
 
 module.exports = router;

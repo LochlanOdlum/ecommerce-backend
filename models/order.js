@@ -21,6 +21,14 @@ const Order = sequelize.define('order', {
     type: DataTypes.BOOLEAN,
     allowNull: false,
   },
+  customerEmail: {
+    type: DataTypes.STRING,
+    allowNull: false,
+  },
+  customerName: {
+    type: DataTypes.STRING,
+    allowNull: false,
+  },
 });
 
 module.exports = Order;

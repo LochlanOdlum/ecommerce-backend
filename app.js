@@ -55,7 +55,7 @@ app.use((error, req, res, next) => {
 Collection.hasMany(Product);
 Product.belongsTo(Collection);
 User.hasMany(Order);
-Order.belongsTo(User);
+// Order.belongsTo(User);
 Order.hasMany(OrderItem, { onDelete: 'cascade' });
 OrderItem.belongsTo(Order);
 OrderItem.belongsTo(Product);

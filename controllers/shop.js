@@ -55,7 +55,7 @@ exports.getCollections = async (req, res, next) => {
 //Once paid then seperate webhook middleware activated by stripe will then update the isPaymentCompleted
 //TODO: STOP USER ORDERING PHOTO MORE THAN ONCE
 exports.startOrder = async (req, res, next) => {
-  const { itemIds } = req.body;
+  const { customerEmail, customerName, itemIds } = req.body;
 
   const products = await Product.findAll({
     where: { id: { [Op.or]: itemIds }, isAvaliableForPurchase: true },
@@ -87,6 +87,8 @@ exports.startOrder = async (req, res, next) => {
     paymentIntentId: paymentIntent.id,
     isPaymentCompleted: false,
     totalPriceInPence: totalCostInPence,
+    customerEmail,
+    customerName,
   });
 
   const promises = [];
@@ -108,7 +110,7 @@ exports.startOrder = async (req, res, next) => {
 
   await Promise.all(promises);
 
-  //If order hasn't been paid in 30 mins and also cancels order and payment Intent so they cannot be charged after.
+  //If order hasn't been paid in 30 mins cancels order and also payment Intent so they cannot be charged after.
 
   setTimeout(async () => {
     try {
@@ -144,7 +146,7 @@ exports.getMyOrder = async (req, res, next) => {
   //Finding order directly rather than using user.getOrder(...), so custom error message for when order exists but not belonging to authenticated user.
   const order = await Order.findOne({
     where: { id: orderId },
-    include: [User, OrderItem],
+    include: [OrderItem],
   });
 
   //Check if payment has been completed yet with manual query to stripe
@@ -157,8 +159,6 @@ exports.getMyOrder = async (req, res, next) => {
     error.statusCode = 404;
     return next(error);
   }
-
-  //If payment isnt completed. Query stripe to check if payment has yet been sent to them. Then return response to client
 
   if (order.userId !== userId) {
     const error = new Error(`Unauthorised. This order isn't yours.`);

@@ -88,13 +88,8 @@ exports.postCollection = async (req, res, next) => {
 };
 
 exports.editCollection = async (req, res, next) => {
-  console.log('working');
   const { id: collectionId } = req.params;
-  console.log(req.body);
   const { updatedCollectionName } = req.body;
-
-  console.log(collectionId);
-  console.log(updatedCollectionName);
 
   await Collection.update({ name: updatedCollectionName }, { where: { id: collectionId } });
 
@@ -168,7 +163,7 @@ exports.getOrders = async (req, res, next) => {
     const resultsPerPage = +resultsPerPageParam;
     const offset = (page - 1) * resultsPerPage;
     const { count, rows: orders } = await Order.findAndCountAll({
-      include: [OrderItem, User],
+      include: [OrderItem],
       limit: resultsPerPage,
       offset,
     });
@@ -176,6 +171,35 @@ exports.getOrders = async (req, res, next) => {
     res.send({ orders, pageCount, count });
   } catch {
     const error = new Error('Could not find all orders');
+    error.statusCode = 500;
+    return next(error);
+  }
+};
+
+exports.getOrderDetails = async (req, res, next) => {
+  try {
+    const { id: orderId } = req.params;
+    let user;
+
+    //1: Get order
+    const order = await Order.findOne({ where: { id: orderId } });
+
+    if (!order) {
+      const error = new Error('Could not find an order with this id');
+      error.statusCode = 500;
+      return next(error);
+    }
+
+    //2: If order belongs to a user, fetch user and send in return request!
+    if (order.userId) {
+      user = await User.findOne({ where: { id: order.userId } });
+    }
+
+    //3: Return response!
+    res.send({ order, user });
+  } catch (e) {
+    console.error(e);
+    const error = new Error('Could not get order details');
     error.statusCode = 500;
     return next(error);
   }
