@@ -99,11 +99,8 @@ exports.startOrder = async (req, res, next) => {
         title: product.title,
         description: product.description,
         priceInPence: product.priceInPence,
-        priceInPounds: product.priceInPounds,
         productId: product.id,
-        imageKey: product.imageKey,
-        imageMedKey: product.imageMedKey,
-        imageMedCropped2to1Key: product.imageMedCropped2to1Key,
+        s3ImagesKey: product.s3ImagesKey,
       })
     );
   });
@@ -227,9 +224,8 @@ exports.getImageMedCropped2to1 = async (req, res, next) => {
   const userOrderItems = [];
   userOrders.forEach((order) => userOrderItems.push(...order.orderItems));
 
-  const orderItemWithKey = userOrderItems.find((orderItem) => orderItem.imageMedCropped2to1Key === key);
+  const orderItemWithKey = userOrderItems.find((orderItem) => orderItem.s3ImagesKey === key);
 
-  console.log(orderItemWithKey);
   if (!orderItemWithKey) {
     const error = new Error('You have not purchased a photo with this key');
     error.statusCode = 404;

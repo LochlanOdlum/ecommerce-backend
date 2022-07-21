@@ -1,6 +1,7 @@
 const fs = require('fs/promises');
 
-const { Op } = require('sequelize');
+const Sequelize = require('sequelize');
+const { Op } = Sequelize;
 
 const Product = require('../models/product');
 const Collection = require('../models/collection');
@@ -8,6 +9,10 @@ const Order = require('../models/order');
 const OrderItem = require('../models/order-item');
 const User = require('../models/user');
 const s3 = require('../util/s3');
+
+// s3.deletePhotos('2022-07-20T17:14:54.576Z-photo-1429041966141-44d228a42775.jpg');
+// s3.deletePhotos('2022-07-20T16:50:47.278Z-photo-1429041966141-44d228a42775.jpg');
+// s3.deletePhotos('2022-07-20T16:43:35.417Z-photo-1429041966141-44d228a42775.jpg');
 
 exports.postPhoto = async (req, res, next) => {
   //req.file contains image info in multer file format
@@ -22,18 +27,11 @@ exports.postPhoto = async (req, res, next) => {
   //  size: 197854
   // }
 
-  const { title, description, priceInPounds, collectionId } = req.body;
+  const s3ImagesKey = req.file.filename;
 
-  // const priceToPounds = (pence) => {
-  //   const array = Array.from(String(pence));
-  //   array.splice(array.length - 2, 0, '.');
+  const { title, description, priceInPence, collectionId } = req.body;
 
-  //   return +array.join('');
-  // };
-
-  const priceInPence = +priceInPounds * 100;
-
-  const S3ResponsePromises = await s3.uploadPhotos(req.file);
+  const S3ResponsePromises = await s3.uploadPhotos(req.file, s3ImagesKey);
   console.log(S3ResponsePromises);
 
   const [
@@ -45,10 +43,6 @@ exports.postPhoto = async (req, res, next) => {
     photoWmarkedMedSquareRes,
   ] = await Promise.all(S3ResponsePromises);
 
-  console.log(photoRes);
-
-  // const rawResponse = await s3.uploadRaw(req.file);
-  // const watermarkedResponse = await s3.watermarkAndUpload(req.file);
   //S3 response object example:
   // {
   // ETag: '"2477a43eada026c5d14c40a1e5402cdd"',
@@ -58,21 +52,18 @@ exports.postPhoto = async (req, res, next) => {
   // Bucket: 'skylight-photography-raw-photos'
   // }
 
+  const ProductsCount = await Product.count();
+
   console.log('Creating photo product in sql database');
   await Product.create({
     title,
     description,
     collectionId,
     priceInPence,
-    priceInPounds,
-    imageKey: photoRes.Key,
-    imageMedKey: photoMedRes.Key,
-    imageMedCropped2to1Key: photoMedCropped2to1Res.Key,
-    imageWmarkedLrgKey: photoWmarkedLrgRes.Key,
+    orderPosition: ProductsCount + 1,
+    s3ImagesKey,
     imageWmarkedLrgPublicURL: photoWmarkedLrgRes.Location,
-    imageWmarkedMedKey: photoWmarkedMedRes.Key,
     imageWmarkedMedPublicURL: photoWmarkedMedRes.Location,
-    imageWmarkedMedSquareKey: photoWmarkedMedSquareRes.Key,
     imageWmarkedMedSquarePublicURL: photoWmarkedMedSquareRes.Location,
   });
 
@@ -156,6 +147,25 @@ exports.editPhoto = async (req, res, next) => {
   res.status(200).json({ message: 'Photo edited successfuly' });
 };
 
+exports.deletePhoto = async (req, res, next) => {
+  try {
+    const { id: photoId } = req.params;
+
+    const { s3ImagesKey } = await Product.findOne({ where: { id: photoId } });
+
+    await Product.destroy({ where: { id: photoId } });
+
+    await s3.deletePhotos(s3ImagesKey);
+
+    res.send({ message: 'Successfuly deleted photo' });
+  } catch (e) {
+    console.error(e);
+    const error = new Error('Could not delete photo');
+    error.statusCode = 500;
+    return next(error);
+  }
+};
+
 exports.getOrders = async (req, res, next) => {
   try {
     const { page: pageParam, resultsPerPage: resultsPerPageParam } = req.query;
@@ -179,7 +189,7 @@ exports.getOrders = async (req, res, next) => {
 exports.getOrderDetails = async (req, res, next) => {
   try {
     const { id: orderId } = req.params;
-    let user;
+    let userResponse;
 
     //1: Get order
     const orderInstance = await Order.findOne({ include: [OrderItem], where: { id: orderId } });
@@ -194,11 +204,18 @@ exports.getOrderDetails = async (req, res, next) => {
 
     //2: If order belongs to a user, fetch user and send in return request!
     if (orderInstance.userId) {
-      user = await User.findOne({ where: { id: orderInstance.userId } });
+      const user = await User.findOne({ where: { id: orderInstance.userId } });
+
+      userResponse = {
+        id: user.id,
+        email: user.email,
+        name: user.name,
+        createdAt: user.createdAt,
+      };
     }
 
     //3: Return response!
-    res.send({ order: { ...orderJSON, user } });
+    res.send({ order: { ...orderJSON, user: userResponse } });
   } catch (e) {
     const error = new Error('Could not get order details');
     error.statusCode = 500;
@@ -228,11 +245,13 @@ exports.getUsers = async (req, res, next) => {
   }
 };
 
-exports.getUser = async (req, res, next) => {
+exports.getUserDetails = async (req, res, next) => {
   try {
     const { id: userId } = req.params;
 
-    const user = await User.findOne({ where: { id: userId } });
+    const user = await User.findOne({
+      where: { id: userId },
+    });
 
     if (!user) {
       const error = new Error('Could not find user with this id');
@@ -240,10 +259,26 @@ exports.getUser = async (req, res, next) => {
       return next(error);
     }
 
-    res.send({ user });
+    const orderCount = await Order.count({ where: { userId } });
+
+    res.send({ user: { id: user.id, email: user.email, name: user.name, createdAt: user.createdAt }, orderCount });
   } catch (e) {
     console.error(e);
     const error = new Error('Could not get user');
+    error.statusCode = 500;
+    return next(error);
+  }
+};
+
+exports.deleteUser = async (req, res, next) => {
+  try {
+    const { id: userId } = req.params;
+
+    await User.destroy({ where: { id: userId } });
+
+    res.send({ message: 'Successfully deleted user' });
+  } catch (e) {
+    const error = new Error('Could not delete user');
     error.statusCode = 500;
     return next(error);
   }

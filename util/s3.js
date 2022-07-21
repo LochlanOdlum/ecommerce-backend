@@ -12,75 +12,6 @@ const s3 = new S3({
   secretAccessKey: process.env.AWS_SECRET_KEY,
 });
 
-// exports.uploadRawAndDownscaledRaw = async (file) => {
-//   const rawMediumImageBuffer = await photoEditFormat.shrinkRawMedium(file.path);
-
-//   const fileStream = fs.createReadStream(file.path);
-
-//   const uploadPromises = [];
-
-//   const uploadParamsRawMedium = {
-//     Bucket: process.env.AWS_BUCKET_MEDIUM_PHOTOS,
-//     Body: Readable.from(rawMediumImageBuffer),
-//     Key: file.filename,
-//   };
-
-//   uploadPromises.push(s3.upload(uploadParamsRawMedium).promise());
-
-//   const uploadParamsRaw = {
-//     Bucket: process.env.AWS_BUCKET_RAW_PHOTOS_NAME,
-//     Body: fileStream,
-//     Key: file.filename,
-//   };
-
-//   uploadPromises.push(s3.upload(uploadParamsRaw).promise());
-
-//   return Promise.all(uploadPromises);
-// };
-
-// //File must be a multer file object
-// exports.watermarkAndUpload = async (file) => {
-//   const [fullWatermarkedImageBuffer, mediumWatermarkedBuffer, mediumCroppedSquareWatermarkedBuffer] =
-//     await photoEditFormat.watermark(file.path, file.filename);
-
-//   console.log('Recieved image buffers');
-
-//   //TODO: Create s3 bucket for different versions of photo given above
-
-//   const uploadPromises = [];
-
-//   //Full quality upload
-//   const uploadParamsFull = {
-//     Bucket: process.env.AWS_BUCKET_FULL_WATERMARKED_PHOTOS_NAME,
-//     Body: Readable.from(fullWatermarkedImageBuffer),
-//     Key: file.filename,
-//   };
-
-//   uploadPromises.push(s3.upload(uploadParamsFull).promise());
-
-//   //Downscaled to medium quality upload
-//   const uploadParamsMedium = {
-//     Bucket: process.env.AWS_BUCKET_MEDIUM_WATERMARKED_PHOTOS_NAME,
-//     Body: Readable.from(mediumWatermarkedBuffer),
-//     Key: file.filename,
-//   };
-
-//   uploadPromises.push(s3.upload(uploadParamsMedium).promise());
-
-//   //Downscaled to medium then cropped square upload
-//   console.log('heyy');
-//   console.log(process.env.AWS_BUCKET_MEDIUM_CROPPED_SQUARE_WATERMARKED_PHOTOS_NAME);
-//   const uploadParamsMediumSquare = {
-//     Bucket: process.env.AWS_BUCKET_MEDIUM_CROPPED_SQUARE_WATERMARKED_PHOTOS_NAME,
-//     Body: Readable.from(mediumCroppedSquareWatermarkedBuffer),
-//     Key: file.filename,
-//   };
-
-//   uploadPromises.push(s3.upload(uploadParamsMediumSquare).promise());
-
-//   return Promise.all(uploadPromises);
-// };
-
 const uploadBufferToS3 = (bucket, buffer, keyName) => {
   const uploadParams = {
     Bucket: bucket,
@@ -104,9 +35,9 @@ const uploadfilePathToS3 = (bucket, filePath, keyName) => {
 };
 
 //Argument needs to be multer file object
-exports.uploadPhotos = async (file) => {
+exports.uploadPhotos = async (file, s3ImagesKey) => {
   const imagePath = file.path;
-  const keyName = file.filename;
+  const keyName = s3ImagesKey;
   //TODO: Figure out a way to not load entire image into memory at full scale (could be ~20MB for biggest photos!)
   const photoWatermarkedBuffer = await imageProcess.watermarkPhoto(imagePath);
 
@@ -163,4 +94,29 @@ exports.getPhoto = (bucket, key) => {
   } catch (error) {
     throw error;
   }
+};
+
+//Deletes image from each bucket
+exports.deletePhotos = (key) => {
+  const buckets = [
+    process.env.AWS_BUCKET_PHOTOS,
+    process.env.AWS_BUCKET_MED_PHOTOS,
+    process.env.AWS_BUCKET_MED_CROPPED_PHOTOS,
+    process.env.AWS_BUCKET_WMARKED_LRG_PHOTOS,
+    process.env.AWS_BUCKET_WMARKED_MED_PHOTOS,
+    process.env.AWS_BUCKET_WMARKED_MED_SQUARE_PHOTOS,
+  ];
+
+  const deletePromises = [];
+
+  buckets.forEach((bucket) => {
+    const deleteParams = {
+      Bucket: bucket,
+      Key: key,
+    };
+
+    deletePromises.push(s3.deleteObject(deleteParams).promise());
+  });
+
+  return Promise.all(deletePromises);
 };

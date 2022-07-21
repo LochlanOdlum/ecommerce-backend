@@ -13,20 +13,26 @@ const router = express.Router();
 //Ensures user is an admin before allowing access to admin endpoints
 router.use(isAuth, fetchUser, isAdmin);
 
+router.get('/photos', adminController.getPhotos);
+
 router.post('/photo', upload.single('image'), adminController.postPhoto);
 
 router.patch('/photo/:id', upload.single('image'), adminController.editPhoto);
 
+router.delete('/photo/:id', adminController.deletePhoto);
+
 router.post('/collection', validationRules.postCollection(), validators.validate, adminController.postCollection);
 
 router.patch('/collection/:id', adminController.editCollection);
-
-router.get('/photos', adminController.getPhotos);
 
 router.get('/orders', adminController.getOrders);
 
 router.get('/orderDetails/:id', adminController.getOrderDetails);
 
 router.get('/users', adminController.getUsers);
+
+router.get('/userDetails/:id', adminController.getUserDetails);
+
+router.delete('/user/:id', adminController.deleteUser);
 
 module.exports = router;
