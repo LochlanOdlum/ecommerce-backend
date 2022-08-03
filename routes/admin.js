@@ -7,6 +7,7 @@ const fetchUser = require('../middlewares/fetch-user');
 const isAdmin = require('../middlewares/is-admin');
 const validationRules = require('../middlewares/validators/rules');
 const validators = require('../middlewares/validators/validators');
+const cache = require('../middlewares/cache');
 
 const router = express.Router();
 
@@ -29,10 +30,14 @@ router.get('/orders', adminController.getOrders);
 
 router.get('/orderDetails/:id', adminController.getOrderDetails);
 
+router.get('/recentOrders', adminController.getRecentOrders);
+
 router.get('/users', adminController.getUsers);
 
 router.get('/userDetails/:id', adminController.getUserDetails);
 
 router.delete('/user/:id', adminController.deleteUser);
+
+router.get('/summaryDetails', cache(30), adminController.summaryDetails);
 
 module.exports = router;

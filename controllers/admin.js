@@ -3,6 +3,8 @@ const fs = require('fs/promises');
 const Sequelize = require('sequelize');
 const { Op } = Sequelize;
 
+const sequelize = require('../util/database');
+
 const Product = require('../models/product');
 const Collection = require('../models/collection');
 const Order = require('../models/order');
@@ -10,64 +12,67 @@ const OrderItem = require('../models/order-item');
 const User = require('../models/user');
 const s3 = require('../util/s3');
 
-// s3.deletePhotos('2022-07-20T17:14:54.576Z-photo-1429041966141-44d228a42775.jpg');
-// s3.deletePhotos('2022-07-20T16:50:47.278Z-photo-1429041966141-44d228a42775.jpg');
-// s3.deletePhotos('2022-07-20T16:43:35.417Z-photo-1429041966141-44d228a42775.jpg');
-
 exports.postPhoto = async (req, res, next) => {
-  //req.file contains image info in multer file format
-  // {
-  //  fieldname: 'image',
-  //  originalname: '65d366_62228a3551614e18a4444ec83c0c0f2c~mv2.jpg',
-  //  encoding: '7bit',
-  //  mimetype: 'image/jpeg',
-  //  destination: 'images',
-  //  filename: '2021-12-27T03:22:31.903Z-65d366_62228a3551614e18a4444ec83c0c0f2c~mv2.jpg',
-  //  path: 'images/2021-12-27T03:22:31.903Z-65d366_62228a3551614e18a4444ec83c0c0f2c~mv2.jpg',
-  //  size: 197854
-  // }
+  try {
+    //req.file contains image info in multer file format
+    // {
+    //  fieldname: 'image',
+    //  originalname: '65d366_62228a3551614e18a4444ec83c0c0f2c~mv2.jpg',
+    //  encoding: '7bit',
+    //  mimetype: 'image/jpeg',
+    //  destination: 'images',
+    //  filename: '2021-12-27T03:22:31.903Z-65d366_62228a3551614e18a4444ec83c0c0f2c~mv2.jpg',
+    //  path: 'images/2021-12-27T03:22:31.903Z-65d366_62228a3551614e18a4444ec83c0c0f2c~mv2.jpg',
+    //  size: 197854
+    // }
 
-  const s3ImagesKey = req.file.filename;
+    const s3ImagesKey = req.file.filename;
 
-  const { title, description, priceInPence, collectionId } = req.body;
+    const { title, description, priceInPence, collectionId } = req.body;
 
-  const S3ResponsePromises = await s3.uploadPhotos(req.file, s3ImagesKey);
-  console.log(S3ResponsePromises);
+    const S3ResponsePromises = await s3.uploadPhotos(req.file, s3ImagesKey);
+    console.log(S3ResponsePromises);
 
-  const [
-    photoRes,
-    photoMedRes,
-    photoMedCropped2to1Res,
-    photoWmarkedLrgRes,
-    photoWmarkedMedRes,
-    photoWmarkedMedSquareRes,
-  ] = await Promise.all(S3ResponsePromises);
+    const [
+      photoRes,
+      photoMedRes,
+      photoMedCropped2to1Res,
+      photoWmarkedLrgRes,
+      photoWmarkedMedRes,
+      photoWmarkedMedSquareRes,
+    ] = await Promise.all(S3ResponsePromises);
 
-  //S3 response object example:
-  // {
-  // ETag: '"2477a43eada026c5d14c40a1e5402cdd"',
-  // Location: 'https://skylight-photography-raw-photos.s3.amazonaws.com/2021-12-27T04%3A11%3A30.108Z-65d366_62228a3551614e18a4444ec83c0c0f2c~mv2.jpg',
-  // key: '2021-12-27T04:11:30.108Z-65d366_62228a3551614e18a4444ec83c0c0f2c~mv2.jpg',
-  // Key: '2021-12-27T04:11:30.108Z-65d366_62228a3551614e18a4444ec83c0c0f2c~mv2.jpg',
-  // Bucket: 'skylight-photography-raw-photos'
-  // }
+    //S3 response object example:
+    // {
+    // ETag: '"2477a43eada026c5d14c40a1e5402cdd"',
+    // Location: 'https://skylight-photography-raw-photos.s3.amazonaws.com/2021-12-27T04%3A11%3A30.108Z-65d366_62228a3551614e18a4444ec83c0c0f2c~mv2.jpg',
+    // key: '2021-12-27T04:11:30.108Z-65d366_62228a3551614e18a4444ec83c0c0f2c~mv2.jpg',
+    // Key: '2021-12-27T04:11:30.108Z-65d366_62228a3551614e18a4444ec83c0c0f2c~mv2.jpg',
+    // Bucket: 'skylight-photography-raw-photos'
+    // }
 
-  const ProductsCount = await Product.count();
+    const ProductsCount = await Product.count();
 
-  console.log('Creating photo product in sql database');
-  await Product.create({
-    title,
-    description,
-    collectionId,
-    priceInPence,
-    orderPosition: ProductsCount + 1,
-    s3ImagesKey,
-    imageWmarkedLrgPublicURL: photoWmarkedLrgRes.Location,
-    imageWmarkedMedPublicURL: photoWmarkedMedRes.Location,
-    imageWmarkedMedSquarePublicURL: photoWmarkedMedSquareRes.Location,
-  });
+    console.log('Creating photo product in sql database');
+    await Product.create({
+      title,
+      description,
+      collectionId,
+      priceInPence,
+      orderPosition: ProductsCount + 1,
+      s3ImagesKey,
+      imageWmarkedLrgPublicURL: photoWmarkedLrgRes.Location,
+      imageWmarkedMedPublicURL: photoWmarkedMedRes.Location,
+      imageWmarkedMedSquarePublicURL: photoWmarkedMedSquareRes.Location,
+    });
 
-  res.status(200).json({ message: 'Photo created' });
+    res.status(200).json({ message: 'Photo created' });
+  } catch (e) {
+    console.error(e);
+    const error = new Error('Could not add photo');
+    error.statusCode = 500;
+    return next(error);
+  }
 };
 
 exports.postCollection = async (req, res, next) => {
@@ -153,9 +158,13 @@ exports.deletePhoto = async (req, res, next) => {
 
     const { s3ImagesKey } = await Product.findOne({ where: { id: photoId } });
 
+    const orderItemWithPhoto = await OrderItem.findOne({ where: { s3ImagesKey } });
+
     await Product.destroy({ where: { id: photoId } });
 
-    await s3.deletePhotos(s3ImagesKey);
+    if (!orderItemWithPhoto) {
+      await s3.deletePhotos(s3ImagesKey);
+    }
 
     res.send({ message: 'Successfuly deleted photo' });
   } catch (e) {
@@ -181,6 +190,27 @@ exports.getOrders = async (req, res, next) => {
     res.send({ orders, pageCount, count });
   } catch {
     const error = new Error('Could not find all orders');
+    error.statusCode = 500;
+    return next(error);
+  }
+};
+
+exports.getRecentOrders = async (req, res, next) => {
+  try {
+    const limit = Number(req.query.limit) || 4;
+
+    // const [results] = await sequelize.query('SELECT * from orders ORDER BY createdAt desc limit ?;', {
+    //   replacements: [limit],
+    // });
+    const recentOrders = await Order.findAll({
+      limit,
+      order: [['createdAt', 'desc']],
+    });
+
+    res.send({ recentOrders });
+  } catch (e) {
+    console.error(e);
+    const error = new Error('Could not get recent orders');
     error.statusCode = 500;
     return next(error);
   }
@@ -279,6 +309,25 @@ exports.deleteUser = async (req, res, next) => {
     res.send({ message: 'Successfully deleted user' });
   } catch (e) {
     const error = new Error('Could not delete user');
+    error.statusCode = 500;
+    return next(error);
+  }
+};
+
+exports.summaryDetails = async (req, res, next) => {
+  try {
+    const userCount = await User.count();
+    const orderCount = await Order.count();
+    const [results] = await sequelize.query('SELECT SUM(`priceInPence`) AS `totalRevenue` FROM `orderItems`');
+    let { totalRevenue } = results[0];
+    if (totalRevenue === null) {
+      totalRevenue = 0;
+    }
+
+    res.send({ summaryDetails: { userCount, orderCount, totalRevenue } });
+  } catch (e) {
+    console.error(e);
+    const error = new Error('Could not get summary details');
     error.statusCode = 500;
     return next(error);
   }

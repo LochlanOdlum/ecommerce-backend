@@ -10,6 +10,7 @@ const s3 = new S3({
   region: process.env.AWS_BUCKET_REGION,
   accessKeyId: process.env.AWS_ACCESS_KEY,
   secretAccessKey: process.env.AWS_SECRET_KEY,
+  signatureVersion: 'v4',
 });
 
 const uploadBufferToS3 = (bucket, buffer, keyName) => {
@@ -91,6 +92,23 @@ exports.getPhoto = (bucket, key) => {
   };
   try {
     return s3.getObject(downloadParams).createReadStream();
+  } catch (error) {
+    throw error;
+  }
+};
+
+exports.getSignedPhotoURL = async (bucket, key, expirationTime) => {
+  const params = { Bucket: bucket, Key: key, Expires: expirationTime };
+  return await s3.getSignedUrlPromise('getObject', params);
+};
+
+exports.getMetadata = async (bucket, key) => {
+  const downloadParams = {
+    Key: key,
+    Bucket: bucket,
+  };
+  try {
+    return s3.headObject(downloadParams).promise();
   } catch (error) {
     throw error;
   }

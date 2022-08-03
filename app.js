@@ -61,21 +61,9 @@ OrderItem.belongsTo(Order);
 OrderItem.belongsTo(Product);
 
 const main = async () => {
-  // const order = await Order.findOne({ where: { id: 7 } });
   // const result = await sequelize.sync({ alter: true });
-  // console.log('t');
   // const result = await sequelize.sync({ force: true });
-  // console.log(user.toJSON());
-  // Collection.create({ name: 'Milan' });
-  // Collection.create({ name: 'Sunsets' });
-  // Collection.create({ name: 'Architecture' });
-  // Collection.create({ name: 'Miscellaneous' });
-  // await Product.create({
-  //   title: 'Dark Night',
-  //   description: 'photo of the moony',
-  //   price: 34.99,
-  //   imageKey: 'awdwar3r3asd',
-  // });
+
   app.listen(process.env.PORT || 5000);
 };
 

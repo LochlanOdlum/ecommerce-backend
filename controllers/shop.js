@@ -249,34 +249,31 @@ exports.getImageMedCropped2to1 = async (req, res, next) => {
   }
 };
 
-exports.getImage = async (req, res, next) => {
-  const { key } = req.params;
-
-  const userOrders = await req.user.getOrders({ include: OrderItem });
-  const userOrderItems = [];
-  userOrders.forEach((order) => userOrderItems.push(...order.orderItems));
-
-  const orderItemWithKey = userOrderItems.find((orderItem) => orderItem.imageKey === key);
-
-  console.log(orderItemWithKey);
-  if (!orderItemWithKey) {
-    const error = new Error('You have not purchased a photo with this key');
-    error.statusCode = 404;
-    return next(error);
-  }
-
+exports.getImageTempURL = async (req, res, next) => {
   try {
-    const readStream = s3.getPhoto(process.env.AWS_BUCKET_PHOTOS, key);
+    const { key } = req.params;
 
-    readStream.on('error', (err) => {
-      const error = new Error('Could not find image with that key');
+    //1: Ensure user has bought a photo with this key before
+    const userOrders = await req.user.getOrders({ include: OrderItem });
+    const userOrderItems = [];
+    userOrders.forEach((order) => userOrderItems.push(...order.orderItems));
+
+    const orderItemWithKey = userOrderItems.find((orderItem) => orderItem.s3ImagesKey === key);
+
+    if (!orderItemWithKey) {
+      const error = new Error('You have not purchased a photo with this key');
       error.statusCode = 404;
       return next(error);
-    });
+    }
 
-    readStream.pipe(res);
+    //Next, get signedURL
+
+    const url = await s3.getSignedPhotoURL(process.env.AWS_BUCKET_PHOTOS, key, 15);
+
+    res.status(200).json({ url });
   } catch (err) {
-    const error = new Error('Could not find image with that key');
+    console.error(err);
+    const error = new Error('Could not get temporary image URL');
     error.statusCode = 404;
     return next(error);
   }

@@ -24,6 +24,6 @@ router.get('/order/success/:paymentIntentId', isAuth, shopController.orderSucces
 
 router.get('/photoMedCropped2to1/:key', isAuth, fetchUser, shopController.getImageMedCropped2to1);
 
-router.get('/photo/:key', isAuth, fetchUser, shopController.getImage);
+router.get('/photoTempURL/:key', isAuth, fetchUser, shopController.getImageTempURL);
 
 module.exports = router;
