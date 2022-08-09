@@ -1,8 +1,9 @@
-// require('dotenv').config();
+require('dotenv').config();
 const express = require('express');
 
 const sequelize = require('./util/database');
 const stripe = require('./util/stripe');
+require('./util/mailer');
 const shopRoute = require('./routes/shop');
 const authRoute = require('./routes/auth');
 const adminRoute = require('./routes/admin');
@@ -14,6 +15,7 @@ const User = require('./models/user');
 const Order = require('./models/order');
 const OrderItem = require('./models/order-item');
 const Collection = require('./models/collection');
+const PasswordReset = require('./models/password-reset');
 
 const app = express();
 
@@ -42,7 +44,7 @@ app.use('/admin', adminRoute);
 app.use('/webhooks', webHooksRoute);
 app.use('/ping', pingRoute);
 
-app.use(authRoute);
+app.use('/auth', authRoute);
 
 app.use((error, req, res, next) => {
   console.log(error);
@@ -59,6 +61,7 @@ User.hasMany(Order);
 Order.hasMany(OrderItem, { onDelete: 'cascade' });
 OrderItem.belongsTo(Order);
 OrderItem.belongsTo(Product);
+PasswordReset.belongsTo(User);
 
 const main = async () => {
   // const result = await sequelize.sync({ alter: true });

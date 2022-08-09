@@ -17,7 +17,7 @@ exports.postSignup = () => {
       }),
 
     body('password').trim().isLength({ min: 8, max: 64 }).withMessage('Password must be between 8 and 64 characters'),
-    body('name').trim().not().isEmpty().withMessage('Must include a name'),
+    body('name').trim().not().isEmpty().isLength({ min: 2, max: 16 }).withMessage('Must include a valid name'),
   ];
 };
 
@@ -42,6 +42,37 @@ exports.getMyOrder = () => {
 
 exports.postCollection = () => {
   return [body('collectionName').not().isEmpty().withMessage('Must include a collectionName')];
+};
+
+exports.updateMyDetails = () => {
+  return [
+    body('updatedFields.updatedEmail')
+      .isEmail()
+      .withMessage('Please enter a valid email')
+      .bail()
+      .normalizeEmail()
+      .custom(async (value, { req }) => {
+        const user = await User.findOne({ where: { email: value } });
+        if (user && user.id !== req.userId) {
+          return Promise.reject('User with this email already exists!');
+        }
+      }),
+
+    body('updatedFields.updatedPhoneNumber').isMobilePhone('en-GB').withMessage('Must be a valid UK phone number'),
+    body('updatedFields.updatedName')
+      .trim()
+      .not()
+      .isEmpty()
+      .isLength({ min: 2, max: 16 })
+      .withMessage('Must include a valid name'),
+  ];
+};
+
+exports.changeMyPassword = () => {
+  return body('newPassword')
+    .trim()
+    .isLength({ min: 8, max: 64 })
+    .withMessage('Password must be between 8 and 64 characters');
 };
 
 // exports.getMyOrders = () => {

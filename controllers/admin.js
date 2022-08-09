@@ -291,7 +291,16 @@ exports.getUserDetails = async (req, res, next) => {
 
     const orderCount = await Order.count({ where: { userId } });
 
-    res.send({ user: { id: user.id, email: user.email, name: user.name, createdAt: user.createdAt }, orderCount });
+    res.send({
+      user: {
+        id: user.id,
+        email: user.email,
+        name: user.name,
+        createdAt: user.createdAt,
+        phoneNumber: user.phoneNumber,
+      },
+      orderCount,
+    });
   } catch (e) {
     console.error(e);
     const error = new Error('Could not get user');
