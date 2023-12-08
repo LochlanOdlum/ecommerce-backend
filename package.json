@@ -25,7 +25,8 @@
     "node-cache": "^5.1.2",
     "sequelize": "^6.9.0",
     "sharp": "^0.32.1",
-    "stripe": "^8.191.0"
+    "stripe": "^8.191.0",
+    "tedious": "^16.6.1"
   },
   "devDependencies": {
     "dotenv": "^10.0.0"
