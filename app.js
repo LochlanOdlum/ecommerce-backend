@@ -1,5 +1,6 @@
 // require('dotenv').config();
 const express = require('express');
+const serverlessExpress = require('@vendia/serverless-express');
 
 const sequelize = require('./util/database');
 const stripe = require('./util/stripe');
@@ -66,11 +67,13 @@ OrderItem.belongsTo(Order);
 OrderItem.belongsTo(Product);
 PasswordReset.belongsTo(User);
 
-const main = async () => {
-  // const result = await sequelize.sync({ alter: true });
-  // const result = await sequelize.sync({ force: true });
+exports.handler = serverlessExpress({ app });
 
-  app.listen(process.env.PORT || 5000);
-};
+// const main = async () => {
+//   // const result = await sequelize.sync({ alter: true });
+//   // const result = await sequelize.sync({ force: true });
 
-main();
+//   app.listen(process.env.PORT || 5000);
+// };
+
+// main();

@@ -1,13 +1,13 @@
-name: "Build and push to ECR"
+name: 'Build and push to ECR'
 
 on:
   push:
     branches:
-    - main
+      - main
   pull_request:
 jobs:
   BuildAndPushImageToECR:
-    name: "Build and Push to ECR"
+    name: 'Build and Push to ECR'
     runs-on: ubuntu-latest
 
     steps:
@@ -19,7 +19,7 @@ jobs:
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: eu-west-2 // region you want to push the image to
+          aws-region: eu-west-2
 
       - name: Login to Amazon ECR
         id: login-ecr
@@ -29,7 +29,7 @@ jobs:
         id: build-image
         env:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-          ECR_REPOSITORY: "skylight-photography-backend"
+          ECR_REPOSITORY: 'skylight-photography-backend'
           IMAGE_TAG: v1
         run: |
           docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
