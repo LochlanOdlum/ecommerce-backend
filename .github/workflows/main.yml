@@ -30,8 +30,14 @@ jobs:
         env:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
           ECR_REPOSITORY: 'skylight-photography-backend'
-          IMAGE_TAG: v1
+          IMAGE_TAG: ${{ github.sha }}
         run: |
           docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
           echo "::set-output name=image::$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG"
+
+      - name: Update Lambda Function
+        run: |
+          aws lambda update-function-code --function-name skylight-photography-backend-lambda --image-uri ${{ steps.build-image.outputs.image }}
+        env:
+          AWS_REGION: eu-west-2
