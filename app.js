@@ -1,4 +1,7 @@
-// require('dotenv').config();
+if (process.env.IS_DEV_ENVIRONMENT) {
+  require('dotenv').config();
+}
+
 const express = require('express');
 const serverlessExpress = require('@vendia/serverless-express');
 
@@ -8,7 +11,6 @@ require('./util/mailer');
 const shopRoute = require('./routes/shop');
 const authRoute = require('./routes/auth');
 const adminRoute = require('./routes/admin');
-const pingRoute = require('./routes/ping');
 const webHooksRoute = require('./routes/webhooks');
 
 const Product = require('./models/product');
@@ -46,7 +48,6 @@ app.use((req, res, next) => {
 app.use('/shop', shopRoute);
 app.use('/admin', adminRoute);
 app.use('/webhooks', webHooksRoute);
-app.use('/ping', pingRoute);
 
 app.use('/auth', authRoute);
 
@@ -69,11 +70,12 @@ PasswordReset.belongsTo(User);
 
 exports.handler = serverlessExpress({ app });
 
-// const main = async () => {
-//   // const result = await sequelize.sync({ alter: true });
-//   // const result = await sequelize.sync({ force: true });
+if (process.env.IS_DEV_ENVIRONMENT) {
+  const main = async () => {
+    // const result = await sequelize.sync({ alter: true });
+    // const result = await sequelize.sync({ force: true });
+    app.listen(process.env.PORT || 5001);
+  };
 
-//   app.listen(process.env.PORT || 5000);
-// };
-
-// main();
+  main();
+}
