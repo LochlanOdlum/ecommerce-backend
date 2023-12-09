@@ -6,10 +6,9 @@ const S3 = require('aws-sdk/clients/s3');
 const imageProcess = require('./imageProcess');
 const upload = require('./multer');
 
+// Credentials pulled in automatically via given execution role in deployment
 const s3 = new S3({
   region: process.env.AWS_BUCKET_REGION,
-  accessKeyId: process.env.AWS_ACCESS_KEY,
-  secretAccessKey: process.env.AWS_SECRET_KEY,
   signatureVersion: 'v4',
 });
 
@@ -44,14 +43,30 @@ exports.uploadPhotos = async (file, s3ImagesKey) => {
 
   //GETTING PHOTO BUFFERS
   const photoMedBuffer = await imageProcess.photoMed(imagePath);
-  const photoMedCropped2to1Buffer = await imageProcess.photoMedCropped2to1(imagePath);
-  const photoWmarkedLrgBuffer = await imageProcess.photoLrg(photoWatermarkedBuffer);
-  const photoWmarkedMedBuffer = await imageProcess.photoMed(photoWatermarkedBuffer);
-  const photoWmarkedMedSquareBuffer = await imageProcess.photoMedCropped1to1(photoWatermarkedBuffer);
+  const photoMedCropped2to1Buffer = await imageProcess.photoMedCropped2to1(
+    imagePath
+  );
+  const photoWmarkedLrgBuffer = await imageProcess.photoLrg(
+    photoWatermarkedBuffer
+  );
+  const photoWmarkedMedBuffer = await imageProcess.photoMed(
+    photoWatermarkedBuffer
+  );
+  const photoWmarkedMedSquareBuffer = await imageProcess.photoMedCropped1to1(
+    photoWatermarkedBuffer
+  );
 
   //UPLOADING PHOTO BUFFERS + ACTUAL PHOTO FROM LOCAL FS
-  const photoResPromise = uploadfilePathToS3(process.env.AWS_BUCKET_PHOTOS, imagePath, keyName);
-  const photoMedResPromise = uploadBufferToS3(process.env.AWS_BUCKET_MED_PHOTOS, photoMedBuffer, keyName);
+  const photoResPromise = uploadfilePathToS3(
+    process.env.AWS_BUCKET_PHOTOS,
+    imagePath,
+    keyName
+  );
+  const photoMedResPromise = uploadBufferToS3(
+    process.env.AWS_BUCKET_MED_PHOTOS,
+    photoMedBuffer,
+    keyName
+  );
   const photoMedCropped2to1ResPromise = uploadBufferToS3(
     process.env.AWS_BUCKET_MED_CROPPED_PHOTOS,
     photoMedCropped2to1Buffer,
