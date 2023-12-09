@@ -1,8 +1,14 @@
 const multer = require('multer');
 
+const tmpDir = '/tmp/raw-images';
+
+if (!fs.existsSync(tmpDir)) {
+  fs.mkdirSync(tmpDir, { recursive: true });
+}
+
 const fileStorage = multer.diskStorage({
   destination: (req, file, cb) => {
-    cb(null, 'util/temp-raw-images');
+    cb(null, tmpDir);
   },
   filename: (req, file, cb) => {
     cb(null, new Date().toISOString() + '-' + file.originalname);
